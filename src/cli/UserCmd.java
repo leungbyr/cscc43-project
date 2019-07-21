@@ -29,26 +29,26 @@ public class UserCmd {
         try {
           choice = Integer.parseInt(input);
           switch (choice) { // Activate the desired functionality
-            case 1:
-              this.searchListings();
-              break;
-            case 2:
-              this.showCurrentBookings();
-              break;
-            case 3:
-              this.createListing();
-              break;
-            case 4:
-              this.showListings();
-              break;
-            case 5:
-              this.showPastBookings();
-              break;
-            case 6:
-              this.deleteProfile();
-              break;
-            default:
-              break;
+          case 1:
+            this.searchListings();
+            break;
+          case 2:
+            this.showCurrentBookings();
+            break;
+          case 3:
+            this.createListing();
+            break;
+          case 4:
+            this.showListings();
+            break;
+          case 5:
+            this.showPastBookings();
+            break;
+          case 6:
+            this.deleteProfile();
+            break;
+          default:
+            break;
           }
         } catch (NumberFormatException e) {
           input = "-1";
@@ -109,6 +109,7 @@ public class UserCmd {
     String input = "";
     int choice = -1;
     do {
+      System.out.print("Choose one of the previous options [0-" + types.length + "]: ");
       input = sc.nextLine();
       try {
         choice = Integer.parseInt(input);

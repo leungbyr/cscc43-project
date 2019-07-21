@@ -69,29 +69,29 @@ public class CommandLine {
         try {
           choice = Integer.parseInt(input);
           switch (choice) { // Activate the desired functionality
-            case 1:
-              this.userLogin();
-              break;
-            case 2:
-              this.createProfile();
-              break;
-            case 3:
-              this.runReports();
-              break;
-            case 6:
-              this.insertOperator();
-              break;
-            case 7:
-              this.selectOperator();
-              break;
-            case 8:
-              this.printSchema();
-              break;
-            case 9:
-              this.printColSchema();
-              break;
-            default:
-              break;
+          case 1:
+            this.userLogin();
+            break;
+          case 2:
+            this.createProfile();
+            break;
+          case 3:
+            this.runReports();
+            break;
+          case 6:
+            this.insertOperator();
+            break;
+          case 7:
+            this.selectOperator();
+            break;
+          case 8:
+            this.printSchema();
+            break;
+          case 9:
+            this.printColSchema();
+            break;
+          default:
+            break;
           }
         } catch (NumberFormatException e) {
           input = "-1";
@@ -113,7 +113,6 @@ public class CommandLine {
   }
 
   private void createProfile() {
-    // TODO Create profile
     // Collect required information
     String[] info = new String[1];
     System.out.print("Username: ");
