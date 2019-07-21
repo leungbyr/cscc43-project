@@ -3,7 +3,8 @@ package cli;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import controllers.*;
+import controllers.SQLController;
+import controllers.UserController;
 
 public class CommandLine {
 
@@ -140,7 +141,7 @@ public class CommandLine {
     System.out.println("0. Exit.");
     System.out.println("1. Log in as user");
     System.out.println("2. Create a profile");
-    System.out.println("3. Log in as admin");
+    System.out.println("3. Reports");
     System.out.println("6. Insert a record.");
     System.out.println("7. Select a record.");
     System.out.println("8. Print schema.");

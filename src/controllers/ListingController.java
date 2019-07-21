@@ -22,4 +22,19 @@ public class ListingController {
     
   }
 
+  public void printCurrentBookings(String username) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  public void printListings(String username) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  public void printPastBookings(String username) {
+    // TODO Auto-generated method stub
+    
+  }
+
 }

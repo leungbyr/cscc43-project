@@ -4,12 +4,12 @@ import java.util.Scanner;
 
 import controllers.SQLController;
 
-public class ReportsCmd {
+public class SearchCmd {
 
   private SQLController sqlMngr = null;
   private Scanner sc = null;
   
-  protected ReportsCmd(SQLController sqlMngr, Scanner sc) {
+  protected SearchCmd(SQLController sqlMngr, Scanner sc) {
     this.sqlMngr = sqlMngr;
     this.sc = sc;
   }
@@ -21,6 +21,7 @@ public class ReportsCmd {
       do {
         menu(); // Print Menu
         input = sc.nextLine();
+        
         try {
           choice = Integer.parseInt(input);
           switch (choice) { // Activate the desired functionality
@@ -43,13 +44,11 @@ public class ReportsCmd {
 
   // Print menu options
   private static void menu() {
-    System.out.println("=========REPORTS MENU=========");
-    System.out.println("0. Exit.");
-    System.out.println("1. Bookings");
-    System.out.println("2. Listings");
-    System.out.println("3. Hosts");
-    System.out.println("4. Renters");
-    System.out.println("5. Comments");
-    System.out.print("Choose one of the previous options [0-5]: ");
+    System.out.println("=========SEARCH FILTERS=========");
+    System.out.println("0. Back.");
+    System.out.println("1. Location");
+    System.out.println("2. Price");
+    System.out.println("3. Date");
+    System.out.print("Change a filter [1-3] or type s to search: ");
   }
 }

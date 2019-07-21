@@ -4,6 +4,7 @@ import java.util.Scanner;
 
 import controllers.ListingController;
 import controllers.SQLController;
+import controllers.UserController;
 import enums.ListingType;
 
 public class UserCmd {
@@ -20,12 +21,6 @@ public class UserCmd {
 
   public boolean execute() {
     if (sc != null && sqlMngr != null) {
-      System.out.println("");
-      System.out.println("**********************");
-      System.out.println("******LOGGED IN*******");
-      System.out.println("**********************");
-      System.out.println("");
-
       String input = "";
       int choice = -1;
       do {
@@ -36,16 +31,22 @@ public class UserCmd {
           switch (choice) { // Activate the desired functionality
             case 1:
               this.searchListings();
+              break;
             case 2:
               this.showCurrentBookings();
+              break;
             case 3:
               this.createListing();
+              break;
             case 4:
               this.showListings();
+              break;
             case 5:
               this.showPastBookings();
+              break;
             case 6:
               this.deleteProfile();
+              break;
             default:
               break;
           }
@@ -64,22 +65,25 @@ public class UserCmd {
   }
 
   private void deleteProfile() {
-    // TODO Auto-generated method stub
-    
+    System.out.print("Enter your password to delete your account: ");
+    String input = sc.nextLine();
+    // TODO Verify password
+    UserController userMngr = new UserController();
+    userMngr.deleteUser(this.username);
   }
 
   private void showPastBookings() {
-    // TODO Auto-generated method stub
-    
+    ListingController listingMngr = new ListingController();
+    listingMngr.printPastBookings(this.username);
   }
 
   private void showListings() {
-    // TODO Auto-generated method stub
-    
+    ListingController listingMngr = new ListingController();
+    listingMngr.printListings(this.username);
   }
 
   private void createListing() {
-    // Collect new listing info
+    // Collect listing info
     ListingType listingType = this.getListingType();
     String[] info = new String[1];
     System.out.print("Address: ");
@@ -122,20 +126,20 @@ public class UserCmd {
   }
 
   private void showCurrentBookings() {
-    // TODO Auto-generated method stub
-    
+    ListingController listingMngr = new ListingController();
+    listingMngr.printCurrentBookings(this.username);
   }
 
   private void searchListings() {
-    // TODO Auto-generated method stub
-    
+    SearchCmd searchCmd = new SearchCmd(sqlMngr, sc);
+    searchCmd.execute();
   }
 
   // Print menu options
   private void menu() {
-    System.out.println("Logged in as: " + this.username);
+    System.out.println("Logged in as " + this.username);
     System.out.println("=========USER MENU=========");
-    System.out.println("0. Exit.");
+    System.out.println("0. Log out.");
     System.out.println("1. Search listings");
     System.out.println("2. My current bookings");
     System.out.println("3. Create a listing");
