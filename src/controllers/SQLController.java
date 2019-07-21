@@ -19,6 +19,19 @@ public class SQLController {
   // execution the same way that are received from the SQL backend.
   protected Statement st = null;
 
+  // Singleton instance
+  private static SQLController instance = null;
+  
+  private SQLController() {}
+  
+  public static SQLController getInstance() {
+    if (instance == null) {
+      instance = new SQLController();
+    }
+    
+    return instance;
+  }
+  
   // Initialize current instance of this class.
   public boolean connect(String[] cred) throws ClassNotFoundException {
     Class.forName(dbClassName);

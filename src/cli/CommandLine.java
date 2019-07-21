@@ -19,7 +19,7 @@ public class CommandLine {
       sc = new Scanner(System.in);
     }
     if (sqlMngr == null) {
-      sqlMngr = new SQLController();
+      sqlMngr = SQLController.getInstance();
     }
     try {
       success = sqlMngr.connect(this.getCredentials());
@@ -68,26 +68,29 @@ public class CommandLine {
         try {
           choice = Integer.parseInt(input);
           switch (choice) { // Activate the desired functionality
-          case 1:
-            this.userLogin();
-            break;
-          case 2:
-            this.createProfile();
-            break;
-          case 6:
-            this.insertOperator();
-            break;
-          case 7:
-            this.selectOperator();
-            break;
-          case 8:
-            this.printSchema();
-            break;
-          case 9:
-            this.printColSchema();
-            break;
-          default:
-            break;
+            case 1:
+              this.userLogin();
+              break;
+            case 2:
+              this.createProfile();
+              break;
+            case 3:
+              this.runReports();
+              break;
+            case 6:
+              this.insertOperator();
+              break;
+            case 7:
+              this.selectOperator();
+              break;
+            case 8:
+              this.printSchema();
+              break;
+            case 9:
+              this.printColSchema();
+              break;
+            default:
+              break;
           }
         } catch (NumberFormatException e) {
           input = "-1";
@@ -101,6 +104,11 @@ public class CommandLine {
       System.out.println("");
       return false;
     }
+  }
+
+  private void runReports() {
+    ReportsCmd reportsCmd = new ReportsCmd(sqlMngr, sc);
+    reportsCmd.execute();
   }
 
   private void createProfile() {
@@ -130,8 +138,9 @@ public class CommandLine {
   private static void menu() {
     System.out.println("=========MENU=========");
     System.out.println("0. Exit.");
-    System.out.println("1. Log in.");
-    System.out.println("2. Create a profile.");
+    System.out.println("1. Log in as user");
+    System.out.println("2. Create a profile");
+    System.out.println("3. Log in as admin");
     System.out.println("6. Insert a record.");
     System.out.println("7. Select a record.");
     System.out.println("8. Print schema.");

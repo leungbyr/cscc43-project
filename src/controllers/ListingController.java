@@ -3,19 +3,21 @@ package controllers;
 import java.sql.Connection;
 import java.sql.Statement;
 
-public class UserController {
-  
+import enums.ListingType;
+
+public class ListingController {
+
   private SQLController sqlMngr = null;
   private Connection conn = null;
   private Statement st = null;
   
-  public UserController() {
+  public ListingController() {
     this.sqlMngr = SQLController.getInstance();
     this.conn = sqlMngr.conn;
     this.st = sqlMngr.st;
   }
   
-  public void insertUser(String string) {
+  public void insertListing(String username, ListingType listingType, String address) {
     // TODO Auto-generated method stub
     
   }

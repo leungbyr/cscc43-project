@@ -11,12 +11,10 @@ public class Main {
    * and lastly, if everything goes fine and the user wants to exit
    * our application we terminate the command line session (endSession).
    */
-public static void main(String[] args) {
-  CommandLine commandLine = new CommandLine();
-  if (commandLine.startSession() && commandLine.execute()) {
-    commandLine.endSession();
+  public static void main(String[] args) {
+    CommandLine commandLine = new CommandLine();
+    if (commandLine.startSession() && commandLine.execute()) {
+      commandLine.endSession();
+    }
   }
-
-}
-
 }
