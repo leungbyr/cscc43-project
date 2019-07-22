@@ -45,7 +45,7 @@ public class UserCmd {
             this.showPastBookings();
             break;
           case 6:
-            this.deleteProfile();
+            if (this.deleteProfile()) input = "0";
             break;
           default:
             break;
@@ -64,12 +64,16 @@ public class UserCmd {
     }
   }
 
-  private void deleteProfile() {
-    System.out.print("Enter your password to delete your account: ");
-    String input = sc.nextLine();
-    // TODO Verify password
-    UserController userMngr = new UserController();
-    userMngr.deleteUser(this.username);
+  private boolean deleteProfile() {
+    System.out.print("Are you sure you want to delete your account? (y/n): ");
+    String input = sc.nextLine().toLowerCase();
+    if (input.equals("y")) {
+      UserController userMngr = new UserController();
+      userMngr.deleteUser(this.username);
+      return true;
+    }
+    
+    return false;
   }
 
   private void showPastBookings() {
@@ -79,7 +83,7 @@ public class UserCmd {
 
   private void showListings() {
     ListingController listingMngr = new ListingController();
-    listingMngr.printListings(this.username);
+    listingMngr.printHostedListings(this.username);
   }
 
   private void createListing() {
@@ -99,36 +103,33 @@ public class UserCmd {
     
     // Print options
     System.out.println("=========SELECT TYPE=========");
-    System.out.println("0. Cancel");
     for (int i = 0; i < types.length; i++) {
       System.out.println((i + 1) + ". " + types[i].toString());
     }
-    System.out.print("Choose one of the previous options [0-" + types.length + "]: ");
     
     // Parse input
     String input = "";
-    int choice = -1;
-    do {
-      System.out.print("Choose one of the previous options [0-" + types.length + "]: ");
+    int choice;
+    while (type == null) {
+      System.out.print("Choose one of the previous options [1-" + types.length + "]: ");
       input = sc.nextLine();
       try {
         choice = Integer.parseInt(input);
-        if (choice <= types.length) { // Checking that choice is valid
+        if (choice > 0 && choice <= types.length) { // Checking that choice is valid
           type = types[choice - 1];
+          break;
         }
-        
-        break;
       } catch (NumberFormatException e) {
-        input = "-1";
+        // Looping and asking for input again
       }
-    } while (input.compareTo("0") != 0);
+    }
     
     return type;
   }
 
   private void showCurrentBookings() {
     ListingController listingMngr = new ListingController();
-    listingMngr.printCurrentBookings(this.username);
+    listingMngr.printUpcomingBookings(this.username);
   }
 
   private void searchListings() {
@@ -138,11 +139,12 @@ public class UserCmd {
 
   // Print menu options
   private void menu() {
-    System.out.println("Logged in as " + this.username);
+    System.out.println("===========================");
+    System.out.println("Logged in as: " + this.username);
     System.out.println("=========USER MENU=========");
     System.out.println("0. Log out.");
     System.out.println("1. Search listings");
-    System.out.println("2. My current bookings");
+    System.out.println("2. My upcoming bookings");
     System.out.println("3. Create a listing");
     System.out.println("4. My listings");
     System.out.println("5. Past bookings");

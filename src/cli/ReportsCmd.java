@@ -82,13 +82,18 @@ public class ReportsCmd {
   }
 
   private void rentersReport() {
-    String[] query = new String[2]; // User input
+    String[] query = new String[3]; // User input
     do {
-      System.out.println("Enter a date range");
+      System.out.println("==================");
+      System.out.println("Enter a date range (default = all time)");
       System.out.print("Start date (yyyy-MM-dd): ");
       query[0] = sc.nextLine();
       System.out.print("End date (yyyy-MM-dd): ");
       query[1] = sc.nextLine();
+      
+      if (query[0].equals("") && query[1].equals("")) {
+        break;
+      }
     } while (!query[0].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))")
               || !query[1].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
     System.out.print("City (unspecified = all): ");
@@ -130,11 +135,16 @@ public class ReportsCmd {
   private void bookingsReport() {
     String[] query = new String[4]; // User input
     do {
-      System.out.println("Date range");
+      System.out.println("==================");
+      System.out.println("Enter a date range (default = all time)");
       System.out.print("Start date (yyyy-MM-dd): ");
       query[0] = sc.nextLine();
       System.out.print("End date (yyyy-MM-dd): ");
       query[1] = sc.nextLine();
+      
+      if (query[0].equals("") && query[1].equals("")) {
+        break;
+      }
     } while (!query[0].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))") 
               || !query[1].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
     System.out.print("City (unspecified = all): ");

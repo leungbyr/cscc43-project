@@ -35,7 +35,7 @@ public class ReportsController {
     
   }
 
-  public void printRentersReport(String string, String string2, String string3) {
+  public void printRentersReport(String startDate, String endDate, String city) {
     // TODO Auto-generated method stub
     
   }

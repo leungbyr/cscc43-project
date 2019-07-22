@@ -15,7 +15,7 @@ public class UserController {
     this.st = sqlMngr.st;
   }
   
-  public void insertUser(String string) {
+  public void insertUser(String username) {
     // TODO Auto-generated method stub
     
   }
@@ -23,6 +23,11 @@ public class UserController {
   public void deleteUser(String username) {
     // TODO Auto-generated method stub
     
+  }
+
+  public boolean verifyLogin(String username, String password) {
+    // TODO Auto-generated method stub
+    return true;
   }
 
 }

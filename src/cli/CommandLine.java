@@ -129,9 +129,18 @@ public class CommandLine {
     System.out.print("Password: ");
     cred[1] = sc.nextLine();
     
-    // TODO Verify user login
-    UserCmd userCmd = new UserCmd(sqlMngr, sc, cred[0]);
-    userCmd.execute();
+    UserController userMngr = new UserController();
+    boolean verified = userMngr.verifyLogin(cred[0], cred[1]);
+    if (verified) {
+      UserCmd userCmd = new UserCmd(sqlMngr, sc, cred[0]);
+      userCmd.execute();
+    } else {
+      System.out.println("");
+      System.out.println("*************************");
+      System.out.println("******LOGIN FAILED*******");
+      System.out.println("*************************");
+      System.out.println("");
+    }
   }
 
   // Print menu options
