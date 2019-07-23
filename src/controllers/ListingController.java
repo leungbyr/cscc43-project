@@ -17,7 +17,7 @@ public class ListingController {
     this.st = sqlMngr.st;
   }
   
-  public void insertListing(String username, ListingType listingType, String address) {
+  public void insertListing(String username, ListingType listingType, String address, String lat, String lon, String city, String country, String postalCode) {
     // TODO Auto-generated method stub
     
   }

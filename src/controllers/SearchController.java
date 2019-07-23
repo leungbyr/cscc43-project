@@ -10,13 +10,11 @@ public class SearchController {
   private SQLController sqlMngr = null;
   private Connection conn = null;
   private Statement st = null;
-  private SearchFilter filters;
   
   public SearchController() {
     this.sqlMngr = SQLController.getInstance();
     this.conn = sqlMngr.conn;
     this.st = sqlMngr.st;
-    this.filters = filters;
   }
 
   public void byVicinity(String lat, String lon, int maxDistance, int sort, SearchFilter filters) {

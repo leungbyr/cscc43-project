@@ -89,12 +89,37 @@ public class UserCmd {
   private void createListing() {
     // Collect listing info
     ListingType listingType = this.getListingType();
-    String[] info = new String[1];
+    String[] info = new String[6];
     System.out.print("Address: ");
     info[0] = sc.nextLine();
     
+    do {
+      System.out.print("Latitude: ");
+      info[1] = sc.nextLine();
+    } while (!info[1].matches("(\\-?\\d+(\\.\\d+)?)"));
+    
+    do {
+      System.out.print("Longitude: ");
+      info[2] = sc.nextLine();
+    } while (!info[2].matches("(\\-?\\d+(\\.\\d+)?)"));
+    
+    System.out.print("City: ");
+    info[3] = sc.nextLine();
+    
+    System.out.print("Country: ");
+    info[4] = sc.nextLine();
+    
+    do {
+      System.out.print("Postal code: ");
+      info[5] = sc.nextLine();
+      
+      if (info[5].contains(" ")) {
+        info[5] = info[5].replace(" ", "");
+      }
+    } while (!info[5].matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
+    
     ListingController listingMngr = new ListingController();
-    listingMngr.insertListing(this.username, listingType, info[0]);
+    listingMngr.insertListing(this.username, listingType, info[0], info[1], info[2], info[3], info[4], info[5]);
   }
 
   private ListingType getListingType() {
