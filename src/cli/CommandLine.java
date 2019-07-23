@@ -114,12 +114,44 @@ public class CommandLine {
 
   private void createProfile() {
     // Collect required information
-    String[] info = new String[1];
-    System.out.print("Username: ");
-    info[0] = sc.nextLine();
+    String[] info = new String[8];
+    
+    do {
+      System.out.print("Username: ");
+      info[0] = sc.nextLine();
+    } while (!info[0].matches("^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$"));
+    
+    do {
+      System.out.print("Password: ");
+      info[1] = sc.nextLine();
+    } while (!info[1].matches("^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$"));
+    
+    System.out.print("First name: ");
+    info[2] = sc.nextLine();
+    System.out.print("Last name: ");
+    info[3] = sc.nextLine();
+    System.out.print("Address: ");
+    info[4] = sc.nextLine();
+    
+    do {
+      System.out.print("Date of birth (yy-MM-dd): ");
+      info[5] = sc.nextLine();
+    } while (!info[5].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
+    
+    do {
+      System.out.print("Social insurance number: ");
+      info[6] = sc.nextLine();
+      
+      if (info[6].contains("-") || info[6].contains(" ")) {
+        info[6] = info[6].replace("-", "").replace(" ", "");
+      }
+    } while (!info[6].matches("^(\\d{9})$"));
+  
+    System.out.print("Occupation: ");
+    info[7] = sc.nextLine();
     
     UserController userMngr = new UserController();
-    userMngr.insertUser(info[0]);
+    userMngr.insertUser(info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
   }
 
   private void userLogin() {

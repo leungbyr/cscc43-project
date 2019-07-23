@@ -108,9 +108,13 @@ public class SearchCmd {
   private void byPostalCode() {
     String postalCode;
     do {
-      System.out.print("Postal code (XXX XXX): ");
+      System.out.print("Postal code: ");
       postalCode = sc.nextLine();
-    } while (!postalCode.matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z] ?[0-9][A-Z][0-9]$"));
+      
+      if (postalCode.contains(" ")) {
+        postalCode = postalCode.replace(" ", "");
+      }
+    } while (!postalCode.matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
     
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();

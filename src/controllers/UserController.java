@@ -15,7 +15,7 @@ public class UserController {
     this.st = sqlMngr.st;
   }
   
-  public void insertUser(String username) {
+  public void insertUser(String username, String password, String firstName, String lastName, String address, String dob, String sin, String occupation) {
     // TODO Auto-generated method stub
     
   }
