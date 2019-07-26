@@ -1,5 +1,7 @@
 package controllers;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -146,11 +148,15 @@ public class SQLController {
    * Initializes all tables if they do not exist
    */
   public void initializeTables() {
-	  String sql;
-	  
 	  try {
-		  sql = "CREATE TABLE Users (sin CHAR(9) PRIMARY KEY, username CHAR(20), password CHAR(20), name CHAR(20), address CHAR(30), birthdate DATE, occupation CHAR(20));";
-		  st.execute(sql);
+		  BufferedReader br = new BufferedReader(new FileReader("resources/initialize.txt"));
+		  
+		  String sql = "";
+		  while ( (sql=br.readLine()) != null ) {
+			  st.execute(sql);
+		  }
+		  
+		  br.close();
 	  } catch (Exception e) { e.printStackTrace(); }
 	  
   }
