@@ -31,9 +31,13 @@ public class CommandLine {
       sc = null;
       sqlMngr = null;
     }
+    
+    // Initialize tables
+    sqlMngr.initializeTables();
+    
     return success;
   }
-
+  
   /*
    * Function that acts as destructor of an instance of this class. Performs some
    * housekeeping setting instance's private field to null
@@ -134,7 +138,7 @@ public class CommandLine {
     info[4] = sc.nextLine();
     
     do {
-      System.out.print("Date of birth (yy-MM-dd): ");
+      System.out.print("Date of birth (yyyy-MM-dd): ");
       info[5] = sc.nextLine();
     } while (!info[5].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
     

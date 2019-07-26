@@ -141,5 +141,18 @@ public class SQLController {
     }
     return rows;
   }
+  
+  /*
+   * Initializes all tables if they do not exist
+   */
+  public void initializeTables() {
+	  String sql;
+	  
+	  try {
+		  sql = "CREATE TABLE Users (sin CHAR(9) PRIMARY KEY, username CHAR(20), password CHAR(20), name CHAR(20), address CHAR(30), birthdate DATE, occupation CHAR(20));";
+		  st.execute(sql);
+	  } catch (Exception e) { e.printStackTrace(); }
+	  
+  }
 
 }
