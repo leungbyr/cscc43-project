@@ -12,6 +12,7 @@ public class UserCmd {
   private SQLController sqlMngr = null;
   private Scanner sc = null;
   private String username = null;
+  private String sin = null;
   
   protected UserCmd(SQLController sqlMngr, Scanner sc, String username) {
     this.sqlMngr = sqlMngr;
