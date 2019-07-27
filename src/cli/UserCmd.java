@@ -1,6 +1,8 @@
 package cli;
 
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -88,7 +90,30 @@ public class UserCmd {
 
   private void showPastBookings() {
     ListingController listingMngr = new ListingController();
-    listingMngr.printPastBookings(this.username);
+    ResultSet rs = listingMngr.printPastBookings(this.username);
+    int i = 0;
+    
+    try {
+      System.out.println("=======PAST BOOKINGS=======");
+      for (i = 1; rs.next(); i++) {
+        String lat = rs.getString("lat");
+        String lon = rs.getString("lon");
+        String type = ListingType.valueOf(rs.getString("type")).toString();
+        String address = rs.getString("address");
+        String city = rs.getString("city");
+        String country = rs.getString("country");
+        String postal = rs.getString("postal");
+        String date = rs.getString("date");
+        boolean canceled = rs.getBoolean("canceled");
+        
+        System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + lat + ", " + lon + ")");
+        System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
+        if (canceled) System.out.print("(CANCELED) ");
+        System.out.println("Booked for: " + date);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
   }
 
   private void showListings() {
@@ -286,7 +311,58 @@ public class UserCmd {
 
   private void showCurrentBookings() {
     ListingController listingMngr = new ListingController();
-    listingMngr.printUpcomingBookings(this.username);
+    ResultSet rs = listingMngr.printUpcomingBookings(this.username);
+    int i = 0;
+    
+    try {
+      System.out.println("======UPCOMING BOOKINGS======");
+      for (i = 1; rs.next(); i++) {
+        String lat = rs.getString("lat");
+        String lon = rs.getString("lon");
+        String type = ListingType.valueOf(rs.getString("type")).toString();
+        String address = rs.getString("address");
+        String city = rs.getString("city");
+        String country = rs.getString("country");
+        String postal = rs.getString("postal");
+        String date = rs.getString("date");
+        
+        System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + lat + ", " + lon + ")");
+        System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
+        System.out.println("Booked for: " + date);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    int cancelNum = -1;
+    while (cancelNum < 0) {
+      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to cancel the booking: ");
+      String cancelInput = sc.nextLine();
+      try {
+        cancelNum = Integer.parseInt(cancelInput);
+        if (cancelNum == 0) {
+          return;
+        } else if (cancelNum < 0 || cancelNum > (i - 1)) {
+          cancelNum = -1;
+        }
+      } catch (NumberFormatException e) {
+        // Loop again
+      }
+    }
+    
+    try {
+      rs.absolute(cancelNum);
+      String cancelLat = rs.getString("lat");
+      String cancelLon = rs.getString("lon");
+      Date cancelDate = rs.getDate("date");
+      BigDecimal cancelPrice = rs.getBigDecimal("price");
+      boolean canceled = listingMngr.cancelBooking(this.username, cancelLat, cancelLon, cancelDate, cancelPrice);
+      if (canceled) {
+        System.out.println("Booking canceled!");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
   }
 
   private void searchListings() {

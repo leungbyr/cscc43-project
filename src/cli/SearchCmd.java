@@ -1,5 +1,7 @@
 package cli;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -121,10 +123,11 @@ public class SearchCmd {
           String country = rs.getString("country");
           String postal = rs.getString("postal");
           String date = rs.getString("date");
-          String price = rs.getString("price");
-          String distance = rs.getString("distance");
+          BigDecimal price = rs.getBigDecimal("price");
+          BigDecimal distance = rs.getBigDecimal("distance");
           System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
-          System.out.println("     Date: " + date + ", Price: $" + price + ", Distance: " + distance + "km");
+          System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
+          System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN) + ", Distance: " + distance.setScale(2, RoundingMode.HALF_EVEN).toString() + "km");
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -151,8 +154,9 @@ public class SearchCmd {
       String bookLat = rs.getString("lat");
       String bookLon = rs.getString("lon");
       Date bookDate = rs.getDate("date");
+      BigDecimal bookPrice = rs.getBigDecimal("price");
       ListingController listingMngr = new ListingController();
-      boolean booked = listingMngr.bookListing(this.username, bookLat, bookLon, bookDate);
+      boolean booked = listingMngr.bookListing(this.username, bookLat, bookLon, bookDate, bookPrice);
       if (booked) {
         System.out.println("Booking successful!");
       }
