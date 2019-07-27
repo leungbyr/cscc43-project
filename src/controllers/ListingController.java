@@ -126,6 +126,7 @@ public class ListingController {
   public boolean bookListing(String username, String lat, String lon, Date date) {
     java.sql.Date sqlDate = new java.sql.Date(date.getTime());
     String rentedSql = "INSERT INTO Has_rented(sin, lat, lon, date) " + "VALUES (?, ?, ?, ?)";
+    String availableSql = "DELETE FROM Available_on WHERE lat = ? AND lon = ? AND date = ?;";
     
     try {
       PreparedStatement preparedStmt;
@@ -135,12 +136,18 @@ public class ListingController {
       preparedStmt.setString(3, lon);
       preparedStmt.setDate(4, sqlDate);
       preparedStmt.execute();
+      preparedStmt = conn.prepareStatement(availableSql);
+      preparedStmt.setString(1, lat);
+      preparedStmt.setString(2, lon);
+      preparedStmt.setDate(3, sqlDate);
+      preparedStmt.execute();
     } catch (SQLException e) {
       e.printStackTrace();
+      return false;
     }
     
     return true;
   }
-
+  
 }
 
