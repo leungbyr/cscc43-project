@@ -26,14 +26,14 @@ public class SearchController {
     // Building sql query
     String priceSql = "";
     if (filters.minPrice > 0 && filters.maxPrice == -1) {
-      priceSql = "price >= " + Integer.toString(filters.minPrice);
+      priceSql = String.format("price >= %d ", filters.minPrice);
     } else if (filters.maxPrice != -1) {
-      priceSql = String.format("price BETWEEN %d AND %d", filters.minPrice, filters.maxPrice);
+      priceSql = String.format("price BETWEEN %d AND %d ", filters.minPrice, filters.maxPrice);
     }
     
     String datesSql = "";
     if (!filters.startDate.equals("") && !filters.endDate.equals("")) {
-      datesSql = String.format("Available_on.date BETWEEN '%s' AND '%s'", filters.startDate, filters.endDate);
+      datesSql = String.format("Available_on.date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate);
     }
     
     String sql = String.format(
@@ -43,7 +43,7 @@ public class SearchController {
         + "INNER JOIN Offers ON Listings.lat = Offers.lat AND Listings.lon = Offers.lon ", lat, lon);
 
     if (!priceSql.equals("") && !datesSql.equals("")) {
-      sql = sql + "WHERE " + priceSql + " AND " + datesSql;
+      sql = sql + "WHERE " + priceSql + "AND " + datesSql;
     } else if (!priceSql.equals("")) {
       sql = sql + "WHERE " + priceSql;
     } else if (!datesSql.equals("")) {
