@@ -1,5 +1,13 @@
 package cli;
 
+import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Scanner;
 
 import controllers.ListingController;
@@ -12,7 +20,6 @@ public class UserCmd {
   private SQLController sqlMngr = null;
   private Scanner sc = null;
   private String username = null;
-  private String sin = null;
   
   protected UserCmd(SQLController sqlMngr, Scanner sc, String username) {
     this.sqlMngr = sqlMngr;
@@ -119,8 +126,87 @@ public class UserCmd {
       }
     } while (!info[5].matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
     
+    List<AvailableDate> availableDates = this.getAvailableDates();
     ListingController listingMngr = new ListingController();
-    listingMngr.insertListing(this.username, listingType, info[0], info[1], info[2], info[3], info[4], info[5]);
+    listingMngr.insertListing(this.username, listingType, info[0], info[1], info[2], info[3], info[4], info[5], availableDates);
+  }
+  
+  private List<AvailableDate> getAvailableDates() {
+    ArrayList<AvailableDate> availableDates = new ArrayList<AvailableDate>();
+    boolean done = false;
+    
+    while (!done) {
+      System.out.println("=======AVAILABLE DATES=======");
+      System.out.println("Enter a date range or 0 to finish posting listing");
+      
+      Date startDate = null;
+      while (startDate == null) {
+        System.out.print("Start date (yyyy-MM-dd): ");
+        String dateInput = sc.nextLine();
+        
+        if (dateInput.equals("0"))  {
+          done = true;
+          break;
+        }
+        
+        try {
+          startDate = new SimpleDateFormat("yyyy-MM-dd").parse(dateInput);
+        } catch (ParseException e) {
+          // Loop and ask for date again
+        }
+      }
+      
+      if (done) break;
+      
+      Date endDate = null;
+      while (endDate == null) {
+        System.out.print("End date (yyyy-MM-dd): ");
+        String dateInput = sc.nextLine();
+        
+        if (dateInput.equals("0"))  {
+          done = true;
+          break;
+        }
+        
+        try {
+          endDate = new SimpleDateFormat("yyyy-MM-dd").parse(dateInput);
+        } catch (ParseException e) {
+          // Loop and ask for date again
+        }
+      }
+      
+      if (done) break;
+      
+      BigDecimal price = null;
+      while (price == null) {
+        System.out.print("Price for this date range: $");
+        String priceInput = sc.nextLine();
+        if (priceInput.matches("^\\d{0,8}(\\.\\d{1,4})?$")) {
+          price = new BigDecimal(priceInput);
+        }
+      }
+      
+      List<Date> dates = this.datesBetween(startDate, endDate);
+      for (Date date : dates) {
+        availableDates.add(new AvailableDate(date, price));
+      }
+    }
+    
+    return availableDates;
+  }
+  
+  private List<Date> datesBetween(Date startDate, Date endDate) {
+    List<Date> dates = new ArrayList<Date>();
+    Calendar calendar = new GregorianCalendar();
+    calendar.setTime(startDate);
+
+    while (calendar.getTime().getTime() <= endDate.getTime()) {
+      Date result = calendar.getTime();
+      dates.add(result);
+      calendar.add(Calendar.DATE, 1);
+    }
+    
+    return dates;
   }
 
   private ListingType getListingType() {
