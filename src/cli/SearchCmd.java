@@ -167,7 +167,7 @@ public class SearchCmd {
       input2 = sc.nextLine();
       
       if (input2.equals("")) {
-        priceRange[1] = 0;
+        priceRange[1] = -1;
       }
       try {
         priceRange[1] = Integer.parseInt(input2);

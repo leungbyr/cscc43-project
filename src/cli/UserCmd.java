@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -13,6 +14,7 @@ import java.util.Scanner;
 import controllers.ListingController;
 import controllers.SQLController;
 import controllers.UserController;
+import enums.Amenity;
 import enums.ListingType;
 
 public class UserCmd {
@@ -126,9 +128,15 @@ public class UserCmd {
       }
     } while (!info[5].matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
     
+    List<Amenity> amenities = this.getAmenities();
     List<AvailableDate> availableDates = this.getAvailableDates();
     ListingController listingMngr = new ListingController();
-    listingMngr.insertListing(this.username, listingType, info[0], info[1], info[2], info[3], info[4], info[5], availableDates);
+    boolean inserted = listingMngr.insertListing(this.username, listingType, info[0], info[1], info[2], info[3], info[4], info[5], availableDates, amenities);
+    if (inserted) {
+      System.out.println("Listing successfully posted!");
+    } else {
+      System.out.println("Listing at this latitude and longitude already exists!");
+    }
   }
   
   private List<AvailableDate> getAvailableDates() {
@@ -193,6 +201,43 @@ public class UserCmd {
     }
     
     return availableDates;
+  }
+  
+  private List<Amenity> getAmenities() {
+    ArrayList<Amenity> amenities = new ArrayList<Amenity>();
+    Amenity values[] = Amenity.values();
+    
+    // Print options
+    System.out.println("=========AMENITIES=========");
+    for (int i = 0; i < values.length; i++) {
+      System.out.println((i + 1) + ". " + values[i].toString());
+    }
+    
+    // Parse input
+    String input = "";
+    do {
+      try {
+        System.out.print("Choose amenities [0-" + values.length + "] (separate by commas): ");
+        input = sc.nextLine();
+        if (input.equals("")) {
+          break;
+        }
+        
+        List<String> chosen = Arrays.asList(input.split("\\s*,\\s*"));
+        for (String num : chosen) {
+          int choice = Integer.parseInt(num);
+          if (choice <= values.length) {
+            amenities.add(values[choice - 1]);
+          }
+        }
+        
+        break;
+      } catch (NumberFormatException e) {
+        input = "-1";
+      }
+    } while (input.compareTo("-1") == 0);
+    
+    return amenities;
   }
   
   private List<Date> datesBetween(Date startDate, Date endDate) {
