@@ -123,4 +123,24 @@ public class ListingController {
     return prices;
   }
 
+  public boolean bookListing(String username, String lat, String lon, Date date) {
+    java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+    String rentedSql = "INSERT INTO Has_rented(sin, lat, lon, date) " + "VALUES (?, ?, ?, ?)";
+    
+    try {
+      PreparedStatement preparedStmt;
+      preparedStmt = conn.prepareStatement(rentedSql);
+      preparedStmt.setString(1, this.getSin(username));
+      preparedStmt.setString(2, lat);
+      preparedStmt.setString(3, lon);
+      preparedStmt.setDate(4, sqlDate);
+      preparedStmt.execute();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return true;
+  }
+
 }
+

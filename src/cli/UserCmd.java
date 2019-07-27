@@ -290,7 +290,7 @@ public class UserCmd {
   }
 
   private void searchListings() {
-    SearchCmd searchCmd = new SearchCmd(sqlMngr, sc);
+    SearchCmd searchCmd = new SearchCmd(sqlMngr, sc, this.username);
     searchCmd.execute();
   }
 

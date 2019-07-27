@@ -21,7 +21,7 @@ public class SearchController {
     this.st = sqlMngr.st;
   }
 
-  public void byVicinity(String lat, String lon, int maxDistance, int sort, SearchFilter filters) {
+  public ResultSet byVicinity(String lat, String lon, int maxDistance, int sort, SearchFilter filters) {
     // sort: 1 = by price, 2 = by distance
     // Building sql query
     String priceSql = "";
@@ -74,25 +74,14 @@ public class SearchController {
       sql = sql + "ORDER BY distance, date;";
     }
     
+    ResultSet rs = null;
     try {
-      ResultSet rs = this.st.executeQuery(sql);
-      for (int i = 1; rs.next(); i++) {
-        String rsLat = rs.getString("lat");
-        String rsLon = rs.getString("lon");
-        String type = ListingType.valueOf(rs.getString("type")).toString();
-        String address = rs.getString("address");
-        String city = rs.getString("city");
-        String country = rs.getString("country");
-        String postal = rs.getString("postal");
-        String date = rs.getString("date");
-        String price = rs.getString("price");
-        String distance = rs.getString("distance");
-        System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
-        System.out.println("     Date: " + date + ", " + " Price: $" + price + ", Distance: " + distance + "km");
-      }
+      rs = this.st.executeQuery(sql);
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    
+    return rs;
   }
 
   public void byPostalCode(String postalCode, SearchFilter filters) {

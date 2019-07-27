@@ -1,22 +1,29 @@
 package cli;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
+import controllers.ListingController;
 import controllers.SQLController;
 import controllers.SearchController;
 import enums.Amenity;
+import enums.ListingType;
 
 public class SearchCmd {
 
   private SQLController sqlMngr = null;
   private Scanner sc = null;
+  private String username = null;
   
-  protected SearchCmd(SQLController sqlMngr, Scanner sc) {
+  protected SearchCmd(SQLController sqlMngr, Scanner sc, String username) {
     this.sqlMngr = sqlMngr;
     this.sc = sc;
+    this.username = username;
   }
 
   public boolean execute() {
@@ -102,7 +109,56 @@ public class SearchCmd {
     
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();
-    searchMngr.byVicinity(lat, lon, maxDistance, sort, filters);
+    ResultSet rs = searchMngr.byVicinity(lat, lon, maxDistance, sort, filters);
+    int i = 0;
+    try {
+      for (i = 1; rs.next(); i++) {
+          String rsLat = rs.getString("lat");
+          String rsLon = rs.getString("lon");
+          String type = ListingType.valueOf(rs.getString("type")).toString();
+          String address = rs.getString("address");
+          String city = rs.getString("city");
+          String country = rs.getString("country");
+          String postal = rs.getString("postal");
+          String date = rs.getString("date");
+          String price = rs.getString("price");
+          String distance = rs.getString("distance");
+          System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
+          System.out.println("     Date: " + date + ", Price: $" + price + ", Distance: " + distance + "km");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    int bookNum = -1;
+    while (bookNum < 0) {
+      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to book the listing: ");
+      String bookInput = sc.nextLine();
+      try {
+        bookNum = Integer.parseInt(bookInput);
+        if (bookNum == 0) {
+          return;
+        } else if (bookNum < 0 || bookNum > (i - 1)) {
+          bookNum = -1;
+        }
+      } catch (NumberFormatException e) {
+        // Loop again
+      }
+    }
+    
+    try {
+      rs.absolute(bookNum);
+      String bookLat = rs.getString("lat");
+      String bookLon = rs.getString("lon");
+      Date bookDate = rs.getDate("date");
+      ListingController listingMngr = new ListingController();
+      boolean booked = listingMngr.bookListing(this.username, bookLat, bookLon, bookDate);
+      if (booked) {
+        System.out.println("Booking successful!");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
   }
 
   private void byPostalCode() {
