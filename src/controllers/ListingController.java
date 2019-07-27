@@ -59,7 +59,7 @@ public class ListingController {
   }
 
   public ResultSet printUpcomingBookings(String username) { 
-    String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE canceled = 0 AND sin = ? AND date >= (SELECT CURDATE());";
+    String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE canceled = 0 AND sin = ? AND date >= (SELECT CURDATE()) ORDER BY date;";
     ResultSet rs = null;
     
     try {

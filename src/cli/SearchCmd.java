@@ -112,6 +112,52 @@ public class SearchCmd {
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();
     ResultSet rs = searchMngr.byVicinity(lat, lon, maxDistance, sort, filters);
+    this.showListings(rs, true);
+  }
+  
+  
+
+  private void byPostalCode() {
+    String postalCode;
+    do {
+      System.out.print("Postal code: ");
+      postalCode = sc.nextLine();
+      
+      if (postalCode.contains(" ")) {
+        postalCode = postalCode.replace(" ", "");
+      }
+    } while (!postalCode.matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
+    
+    int sort;
+    do {
+      System.out.println("Sort by:");
+      System.out.println("1. Price");
+      System.out.println("2. Date");
+      System.out.print("Choose one of the previous options [1 or 2]: ");
+      String sortInput = sc.nextLine();
+      
+      try {
+        sort = Integer.parseInt(sortInput);
+      } catch (NumberFormatException e) {
+        sort = -1;
+      }
+    } while (sort < 1 || sort > 2);
+    
+    SearchFilter filters = getFilters();
+    SearchController searchMngr = new SearchController();
+    ResultSet rs = searchMngr.byPostalCode(postalCode, filters, sort);
+    this.showListings(rs, false);
+  }
+
+  private void byAddress() {
+    System.out.print("Address: ");
+    String address = sc.nextLine();
+    SearchController searchMngr = new SearchController();
+    ResultSet rs = searchMngr.byAddress(address);
+    this.showListings(rs, false);
+  }
+
+  private void showListings(ResultSet rs, boolean showDistance) {
     int i = 0;
     try {
       for (i = 1; rs.next(); i++) {
@@ -124,10 +170,17 @@ public class SearchCmd {
           String postal = rs.getString("postal");
           String date = rs.getString("date");
           BigDecimal price = rs.getBigDecimal("price");
-          BigDecimal distance = rs.getBigDecimal("distance");
+          String distString;
+          if (showDistance) {
+            BigDecimal distance = rs.getBigDecimal("distance").setScale(2, RoundingMode.HALF_EVEN);
+            distString = ", Distance: " + distance.toString() + "km";
+          } else {
+            distString = "";
+          }
+          
           System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
           System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
-          System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN) + ", Distance: " + distance.setScale(2, RoundingMode.HALF_EVEN).toString() + "km");
+          System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN) + distString);
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -163,29 +216,6 @@ public class SearchCmd {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-  }
-
-  private void byPostalCode() {
-    String postalCode;
-    do {
-      System.out.print("Postal code: ");
-      postalCode = sc.nextLine();
-      
-      if (postalCode.contains(" ")) {
-        postalCode = postalCode.replace(" ", "");
-      }
-    } while (!postalCode.matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
-    
-    SearchFilter filters = getFilters();
-    SearchController searchMngr = new SearchController();
-    searchMngr.byPostalCode(postalCode, filters);
-  }
-
-  private void byAddress() {
-    System.out.print("Address: ");
-    String address = sc.nextLine();
-    SearchController searchMngr = new SearchController();
-    searchMngr.byAddress(address);
   }
 
   private SearchFilter getFilters() {
