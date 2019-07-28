@@ -38,7 +38,7 @@ public class SearchController {
     
     String datesSql = "";
     if (!filters.startDate.equals("") && !filters.endDate.equals("")) {
-      datesSql = String.format("Available_on.date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate);
+      datesSql = String.format("Available_on.date >= CURDATE() AND Available_on.date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate);
     } else {
       datesSql = ("Available_on.date >= CURDATE() ");
     }
@@ -94,7 +94,7 @@ public class SearchController {
         + "FROM Listings "
         + "INNER JOIN Available_on ON Listings.lat = Available_on.lat AND Listings.lon = Available_on.lon "
         + "INNER JOIN Offers ON Listings.lat = Offers.lat AND Listings.lon = Offers.lon "
-        + "WHERE SUBSTRING(postal, 1, 3) = '%s' ", postalCode.substring(0, 3));
+        + "WHERE date >= CURDATE() AND SUBSTRING(postal, 1, 3) = '%s' ", postalCode.substring(0, 3));
     
     String priceSql = "";
     if (filters.minPrice > 0 && filters.maxPrice == -1) {
@@ -151,7 +151,7 @@ public class SearchController {
         "SELECT DISTINCT Listings.lat, Listings.lon, price, date, type, address, city, country, postal "
         + "FROM Listings "
         + "INNER JOIN Available_on ON Listings.lat = Available_on.lat AND Listings.lon = Available_on.lon "
-        + "WHERE address = '%s' ORDER BY date;", address);
+        + "WHERE address = '%s' AND date >= CURDATE() ORDER BY date;", address);
     
     ResultSet rs = null;
     try {
