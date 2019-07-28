@@ -1,6 +1,7 @@
 package cli;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -13,6 +14,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Scanner;
 
+import controllers.CommentsController;
 import controllers.ListingController;
 import controllers.SQLController;
 import controllers.UserController;
@@ -54,9 +56,18 @@ public class UserCmd {
             this.showListings();
             break;
           case 5:
-            this.showPastBookings();
+            this.showRentedOut();
             break;
           case 6:
+            this.showPastListings();
+            break;
+          case 7:
+            this.showPastBookings();
+            break;
+          case 8:
+            this.profileComments();
+            break;
+          case 9:
             if (this.deleteProfile()) input = "0";
             break;
           default:
@@ -73,6 +84,110 @@ public class UserCmd {
       System.out.println("Connection could not been established! Bye!");
       System.out.println("");
       return false;
+    }
+  }
+
+  private void profileComments() {
+    CommentsController commentsMngr = new CommentsController();
+    ResultSet rs = commentsMngr.getComments(this.username);
+    try {
+      System.out.println("=======PROFILE COMMENTS=======");
+      while (rs.next()) {
+        String comment = rs.getString("text");
+        String rating = rs.getString("rating");
+        System.out.println("(" + rating + " stars) " + comment);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void showPastListings() {
+    ListingController listingMngr = new ListingController();
+    ResultSet rs = listingMngr.printPastRentedOut(this.username);
+    int i = this.printResults(rs);
+    int num = -1;
+    while (num < 0) {
+      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to comment/rate the renter: ");
+      String input = sc.nextLine();
+      try {
+        num = Integer.parseInt(input);
+        if (num == 0) {
+          return;
+        } else if (num < 0 || num > (i - 1)) {
+          num = -1;
+        }
+      } catch (NumberFormatException e) {
+        // Loop again
+      }
+    }
+    
+    try {
+      rs.absolute(num);
+      String lat = rs.getString("lat");
+      String lon = rs.getString("lon");
+      Date date = rs.getDate("date");
+      this.renterComment(lat, lon, date);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void renterComment(String lat, String lon, Date date) {
+    int rating = -1;
+    while (rating < 0) {
+      System.out.print("Enter a rating (1-5) or 0 to go back: ");
+      String ratingInput = sc.nextLine();
+      try {
+        rating = Integer.parseInt(ratingInput);
+        if (rating == 0) {
+          return;
+        } else if (rating < 1 || rating > 5) {
+          rating = -1;
+        }
+      } catch (NumberFormatException e) {
+        // Loop again
+      }
+    }
+    
+    System.out.println("Comment: ");
+    String comment = sc.nextLine();
+    CommentsController commentsMngr = new CommentsController();
+    commentsMngr.renterComment(this.username, lat, lon, date, rating, comment);
+  }
+
+  private void showRentedOut() {
+    ListingController listingMngr = new ListingController();
+    ResultSet rs = listingMngr.printRentedOut(this.username);
+    int i = this.printResults(rs);
+    int modifyNum = -1;
+    while (modifyNum < 0) {
+      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to cancel the booking: ");
+      String modifyInput = sc.nextLine();
+      try {
+        modifyNum = Integer.parseInt(modifyInput);
+        if (modifyNum == 0) {
+          return;
+        } else if (modifyNum < 0 || modifyNum > (i - 1)) {
+          modifyNum = -1;
+        }
+      } catch (NumberFormatException e) {
+        // Loop again
+      }
+    }
+    
+    try {
+      rs.absolute(modifyNum);
+      String modifyLat = rs.getString("lat");
+      String modifyLon = rs.getString("lon");
+      Date modifyDate = rs.getDate("date");
+      BigDecimal price = rs.getBigDecimal("price");
+      
+      if (listingMngr.cancelBooking(modifyLat, modifyLon, modifyDate, price, false)) {
+        System.out.println("Booking canceled.");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
   }
 
@@ -118,7 +233,101 @@ public class UserCmd {
 
   private void showListings() {
     ListingController listingMngr = new ListingController();
-    listingMngr.printHostedListings(this.username);
+    ResultSet rs = listingMngr.printHostedListings(this.username);
+    int i = this.printResults(rs);
+    int modifyNum = -1;
+    while (modifyNum < 0) {
+      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to modify the listing: ");
+      String modifyInput = sc.nextLine();
+      try {
+        modifyNum = Integer.parseInt(modifyInput);
+        if (modifyNum == 0) {
+          return;
+        } else if (modifyNum < 0 || modifyNum > (i - 1)) {
+          modifyNum = -1;
+        }
+      } catch (NumberFormatException e) {
+        // Loop again
+      }
+    }
+    
+    try {
+      rs.absolute(modifyNum);
+      String modifyLat = rs.getString("lat");
+      String modifyLon = rs.getString("lon");
+      Date modifyDate = rs.getDate("date");
+      this.modifyListing(modifyLat, modifyLon, modifyDate);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+  
+  private int printResults(ResultSet rs) {
+    int i = 0;
+    try {
+      for (i = 1; rs.next(); i++) {
+          String rsLat = rs.getString("lat");
+          String rsLon = rs.getString("lon");
+          String type = ListingType.valueOf(rs.getString("type")).toString();
+          String address = rs.getString("address");
+          String city = rs.getString("city");
+          String country = rs.getString("country");
+          String postal = rs.getString("postal");
+          String date = rs.getString("date");
+          BigDecimal price = rs.getBigDecimal("price");
+
+          System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
+          System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
+          System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN));
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return i;
+  }
+  
+  private void modifyListing(String lat, String lon, Date date) {
+    int op = -1;
+    do {
+      System.out.println("=======MODIFY LISTING=======");
+      System.out.println("0. Back");
+      System.out.println("1. Remove the listing");
+      System.out.println("2. Change price");
+      System.out.print("Choose one of the previous options [0-2]: ");
+      String sortInput = sc.nextLine();
+      
+      try {
+        op = Integer.parseInt(sortInput);
+      } catch (NumberFormatException e) {
+        op = -1;
+      }
+    } while (op < 0 || op > 2);
+    
+    if (op == 0) {
+      return;
+    }
+    
+    ListingController listingMngr = new ListingController();
+    if (op == 1) {
+      if (listingMngr.removeListing(lat, lon, date)) {
+        System.out.println("Listing removed!");
+      }
+    } else if (op == 2) {
+      BigDecimal price = null;
+      while (price == null) {
+        System.out.print("New price: $");
+        String priceInput = sc.nextLine();
+        if (priceInput.matches("^\\d{0,8}(\\.\\d{1,4})?$")) {
+          price = new BigDecimal(priceInput);
+          if (listingMngr.updatePrice(lat, lon, date, price)) {
+            System.out.println("Price updated!");
+          } else {
+            System.out.println("Price not updated (listing date may be too close)");
+          }
+        }
+      }
+     }
   }
 
   private void createListing() {
@@ -356,7 +565,7 @@ public class UserCmd {
       String cancelLon = rs.getString("lon");
       Date cancelDate = rs.getDate("date");
       BigDecimal cancelPrice = rs.getBigDecimal("price");
-      boolean canceled = listingMngr.cancelBooking(this.username, cancelLat, cancelLon, cancelDate, cancelPrice);
+      boolean canceled = listingMngr.cancelBooking(cancelLat, cancelLon, cancelDate, cancelPrice, true);
       if (canceled) {
         System.out.println("Booking canceled!");
       }
@@ -379,9 +588,12 @@ public class UserCmd {
     System.out.println("1. Search listings");
     System.out.println("2. My upcoming bookings");
     System.out.println("3. Create a listing");
-    System.out.println("4. My listings");
-    System.out.println("5. Past bookings");
-    System.out.println("6. Delete profile");
-    System.out.print("Choose one of the previous options [0-6]: ");
+    System.out.println("4. My available listings");
+    System.out.println("5. Upcoming rented out listings");
+    System.out.println("6. Past rented out listings");
+    System.out.println("7. Past bookings");
+    System.out.println("8. Profile comments");
+    System.out.println("9. Delete profile");
+    System.out.print("Choose one of the previous options [0-9]: ");
   }
 }

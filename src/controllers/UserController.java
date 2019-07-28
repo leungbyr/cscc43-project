@@ -48,7 +48,7 @@ public class UserController {
   }
 
   public void deleteUser(String username) {
-    String sql = String.format("DELETE FROM Users WHERE username=%s",
+    String sql = String.format("DELETE FROM Users WHERE username='%s'",
                                 username);
 
     try {

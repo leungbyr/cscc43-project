@@ -37,7 +37,7 @@ public class ListingController {
       // Insert available dates
       for (AvailableDate date : availableDates) {
         java.sql.Date sqlDate = new java.sql.Date(date.getDate().getTime());
-        String sql = "INSERT INTO Available_on(lat, lon, date, price)" + " VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Available_on(lat, lon, date, price, removed)" + " VALUES (?, ?, ?, ?, 0)";
         PreparedStatement preparedStmt = conn.prepareStatement(sql);
         preparedStmt.setString(1, lat);
         preparedStmt.setString(2, lon);
@@ -73,27 +73,40 @@ public class ListingController {
     return rs;
   }
 
-  public void printHostedListings(String username) {
-    String sql = "SELECT * FROM LISTINGS LEFT JOIN Hosted_by ON Listings.lat = Hosted_by.lat AND Listings.lon = Hosted_by.lon AND Hosted_by.sin = "
-                    + this.getSin(username) + ";";
+  public ResultSet printHostedListings(String username) {
+    String sql = String.format(
+        "SELECT DISTINCT Listings.lat, Listings.lon, price, date, type, address, city, country, postal "
+        + "FROM Listings "
+        + "INNER JOIN Hosted_by ON Listings.lat = Hosted_by.lat AND Listings.lon = Hosted_by.lon "
+        + "INNER JOIN Available_on ON Listings.lat = Available_on.lat AND Listings.lon = Available_on.lon "
+        + "WHERE sin = %s AND removed = 0 ORDER BY date;", this.getSin(username));
     
+    ResultSet rs = null;
     try {
-      ResultSet rs = this.st.executeQuery(sql);
-      System.out.println("=========LISTINGS=========");
-      for (int i = 1; rs.next(); i++) {
-        String lat = rs.getString("lat");
-        String lon = rs.getString("lon");
-        String type = ListingType.valueOf(rs.getString("type")).toString();
-        String address = rs.getString("address");
-        String city = rs.getString("city");
-        String country = rs.getString("country");
-        String postal = rs.getString("postal");
-        
-        System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + lat + ", " + lon + ")");
-      }
+      rs = this.st.executeQuery(sql);
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    
+    return rs;
+  }
+  
+  public ResultSet printRentedOut(String username) {
+    String sql = String.format(
+        "SELECT DISTINCT Listings.lat, Listings.lon, price, date, type, address, city, country, postal "
+        + "FROM Listings "
+        + "INNER JOIN Hosted_by ON Listings.lat = Hosted_by.lat AND Listings.lon = Hosted_by.lon "
+        + "INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon "
+        + "WHERE Hosted_by.sin = %s AND canceled = 0 AND date >= CURDATE() ORDER BY date;", this.getSin(username));
+    
+    ResultSet rs = null;
+    try {
+      rs = this.st.executeQuery(sql);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return rs;
   }
 
   public ResultSet printPastBookings(String username) {
@@ -129,7 +142,7 @@ public class ListingController {
   
   private BigDecimal[] getNearestListingPrices(String lat, String lon, int numListings) {
     BigDecimal[] prices = new BigDecimal[numListings];
-    String sql = String.format("SELECT lat, lon, SQRT(POW(69.1 * (lat - %s), 2) + POW(69.1 * (%s - lon) * COS(lat / 57.3), 2)) AS distance FROM Available_on ORDER BY distance;",
+    String sql = String.format("SELECT lat, lon, SQRT(POW(69.1 * (lat - %s), 2) + POW(69.1 * (%s - lon) * COS(lat / 57.3), 2)) AS distance FROM Available_on WHERE removed = 0 ORDER BY distance;",
         lat, lon);
     
     try {
@@ -171,31 +184,94 @@ public class ListingController {
     return true;
   }
 
-  public boolean cancelBooking(String username, String lat, String lon, Date date, BigDecimal price) {
+  public boolean cancelBooking(String lat, String lon, Date date, BigDecimal price, boolean makeAvailable) {
     java.sql.Date sqlDate = new java.sql.Date(date.getTime());
-    String rentedSql = "UPDATE Has_rented SET canceled = 1 WHERE sin = ? AND lat = ? AND lon = ? AND date = ?;";
+    String rentedSql = "UPDATE Has_rented SET canceled = 1 WHERE lat = ? AND lon = ? AND date = ?;";
     String availableSql = "INSERT INTO Available_on(lat, lon, date, price) VALUES (?, ?, ?, ?);";
     
     try {
       PreparedStatement preparedStmt;
       preparedStmt = conn.prepareStatement(rentedSql);
-      preparedStmt.setString(1, this.getSin(username));
-      preparedStmt.setString(2, lat);
-      preparedStmt.setString(3, lon);
-      preparedStmt.setDate(4, sqlDate);
-      preparedStmt.execute();
-      preparedStmt = conn.prepareStatement(availableSql);
       preparedStmt.setString(1, lat);
       preparedStmt.setString(2, lon);
       preparedStmt.setDate(3, sqlDate);
-      preparedStmt.setBigDecimal(4, price);
       preparedStmt.execute();
+      if (makeAvailable) {
+        preparedStmt = conn.prepareStatement(availableSql);
+        preparedStmt.setString(1, lat);
+        preparedStmt.setString(2, lon);
+        preparedStmt.setDate(3, sqlDate);
+        preparedStmt.setBigDecimal(4, price);
+        preparedStmt.execute();
+      }
     } catch (SQLException e) {
       e.printStackTrace();
       return false;
     }
     
     return true;  
+  }
+
+  public boolean removeListing(String lat, String lon, Date date) {
+    java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+    String availableSql = "UPDATE Available_on SET removed = 1 WHERE lat = ? AND lon = ? AND date = ?;";
+    
+    try {
+      PreparedStatement preparedStmt;
+      preparedStmt = conn.prepareStatement(availableSql);
+      preparedStmt.setString(1, lat);
+      preparedStmt.setString(2, lon);
+      preparedStmt.setDate(3, sqlDate);
+      preparedStmt.execute();
+    } catch (SQLException e) {
+      e.printStackTrace();
+      return false;
+    }
+    
+    return true;
+  }
+
+  public boolean updatePrice(String lat, String lon, Date date, BigDecimal price) {
+    java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+    String availableSql = "UPDATE Available_on SET price = ? WHERE lat = ? AND lon = ? AND date = ? AND date > CURDATE() + 1;";
+    int updated = 0;
+    
+    try {
+      PreparedStatement preparedStmt;
+      preparedStmt = conn.prepareStatement(availableSql);
+      preparedStmt.setBigDecimal(1, price);
+      preparedStmt.setString(2, lat);
+      preparedStmt.setString(3, lon);
+      preparedStmt.setDate(4, sqlDate);
+      updated = preparedStmt.executeUpdate();
+    } catch (SQLException e) {
+      e.printStackTrace();
+      return false;
+    }
+    
+    if (updated == 0) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  public ResultSet printPastRentedOut(String username) {
+    String sql = String.format(
+        "SELECT DISTINCT Listings.lat, Listings.lon, price, date, type, address, city, country, postal "
+        + "FROM Listings "
+        + "INNER JOIN Hosted_by ON Listings.lat = Hosted_by.lat AND Listings.lon = Hosted_by.lon "
+        + "INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon "
+        + "WHERE Hosted_by.sin = %s AND canceled = 0 AND date < CURDATE() ORDER BY date;", this.getSin(username));
+    
+    ResultSet rs = null;
+    try {
+      rs = this.st.executeQuery(sql);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return rs;
   }
   
 }

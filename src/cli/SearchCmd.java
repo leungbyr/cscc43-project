@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
+import controllers.CommentsController;
 import controllers.ListingController;
 import controllers.SQLController;
 import controllers.SearchController;
@@ -97,9 +98,10 @@ public class SearchCmd {
     int sort;
     do {
       System.out.println("Sort by:");
-      System.out.println("1. Price");
-      System.out.println("2. Distance");
-      System.out.print("Choose one of the previous options [1 or 2]: ");
+      System.out.println("1. Price (ascending)");
+      System.out.println("2. Price (descending)");
+      System.out.println("3. Distance");
+      System.out.print("Choose one of the previous options [1-3]: ");
       String sortInput = sc.nextLine();
       
       try {
@@ -107,7 +109,7 @@ public class SearchCmd {
       } catch (NumberFormatException e) {
         sort = -1;
       }
-    } while (sort < 1 || sort > 2);
+    } while (sort < 1 || sort > 3);
     
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();
@@ -115,8 +117,6 @@ public class SearchCmd {
     this.showListings(rs, true);
   }
   
-  
-
   private void byPostalCode() {
     String postalCode;
     do {
@@ -131,9 +131,11 @@ public class SearchCmd {
     int sort;
     do {
       System.out.println("Sort by:");
-      System.out.println("1. Price");
-      System.out.println("2. Date");
-      System.out.print("Choose one of the previous options [1 or 2]: ");
+      System.out.println("1. Price (ascending)");
+      System.out.println("2. Price (descending)");
+      System.out.println("3. Date (ascending)");
+      System.out.println("4. Date (descending)");
+      System.out.print("Choose one of the previous options [1-4]: ");
       String sortInput = sc.nextLine();
       
       try {
@@ -141,7 +143,7 @@ public class SearchCmd {
       } catch (NumberFormatException e) {
         sort = -1;
       }
-    } while (sort < 1 || sort > 2);
+    } while (sort < 1 || sort > 4);
     
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();
@@ -157,7 +159,7 @@ public class SearchCmd {
     this.showListings(rs, false);
   }
 
-  private void showListings(ResultSet rs, boolean showDistance) {
+  protected void showListings(ResultSet rs, boolean showDistance) {
     int i = 0;
     try {
       for (i = 1; rs.next(); i++) {
@@ -186,16 +188,16 @@ public class SearchCmd {
       e.printStackTrace();
     }
     
-    int bookNum = -1;
-    while (bookNum < 0) {
-      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to book the listing: ");
-      String bookInput = sc.nextLine();
+    int num = -1;
+    while (num < 0) {
+      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to select a listing: ");
+      String input = sc.nextLine();
       try {
-        bookNum = Integer.parseInt(bookInput);
-        if (bookNum == 0) {
+        num = Integer.parseInt(input);
+        if (num == 0) {
           return;
-        } else if (bookNum < 0 || bookNum > (i - 1)) {
-          bookNum = -1;
+        } else if (num < 0 || num > (i - 1)) {
+          num = -1;
         }
       } catch (NumberFormatException e) {
         // Loop again
@@ -203,18 +205,60 @@ public class SearchCmd {
     }
     
     try {
-      rs.absolute(bookNum);
-      String bookLat = rs.getString("lat");
-      String bookLon = rs.getString("lon");
-      Date bookDate = rs.getDate("date");
-      BigDecimal bookPrice = rs.getBigDecimal("price");
+      rs.absolute(num);
+      String lat = rs.getString("lat");
+      String lon = rs.getString("lon");
+      Date date = rs.getDate("date");
+      BigDecimal price = rs.getBigDecimal("price");
+      this.listingOptions(lat, lon, date, price);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+  
+  private void listingOptions(String lat, String lon, Date date, BigDecimal price) {
+    int op = -1;
+    do {
+      System.out.println("=======LISTING OPTIONS=======");
+      System.out.println("0. Back");
+      System.out.println("1. Book this listing");
+      System.out.println("2. See host comments");
+      System.out.println("3. See listing comments");
+      System.out.print("Choose one of the previous options [0-3]: ");
+      String sortInput = sc.nextLine();
+      
+      try {
+        op = Integer.parseInt(sortInput);
+      } catch (NumberFormatException e) {
+        op = -1;
+      }
+    } while (op < 0 || op > 2);
+    
+    if (op == 0) {
+      return;
+    }
+    
+    if (op == 1) {
       ListingController listingMngr = new ListingController();
-      boolean booked = listingMngr.bookListing(this.username, bookLat, bookLon, bookDate, bookPrice);
+      boolean booked = listingMngr.bookListing(this.username, lat, lon, date, price);
       if (booked) {
         System.out.println("Booking successful!");
       }
-    } catch (SQLException e) {
-      e.printStackTrace();
+    } else if (op == 2) {
+      CommentsController commentsMngr = new CommentsController();
+      ResultSet rs = commentsMngr.getHostComments(lat, lon, date);
+      try {
+        System.out.println("=======COMMENTS ON HOST=======");
+        while (rs.next()) {
+          String comment = rs.getString("text");
+          String rating = rs.getString("rating");
+          System.out.println("(" + rating + " stars) " + comment);
+        }
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
+    } else if (op == 3) {
+      
     }
   }
 
@@ -311,7 +355,7 @@ public class SearchCmd {
 
   // Print menu options
   private static void menu() {
-    System.out.println("=========SEARCH FILTERS=========");
+    System.out.println("=======SEARCH FILTERS=======");
     System.out.println("0. Back.");
     System.out.println("1. Search by vicinity");
     System.out.println("2. Search by postal code");

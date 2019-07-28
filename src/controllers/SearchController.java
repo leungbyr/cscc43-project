@@ -39,6 +39,8 @@ public class SearchController {
     String datesSql = "";
     if (!filters.startDate.equals("") && !filters.endDate.equals("")) {
       datesSql = String.format("Available_on.date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate);
+    } else {
+      datesSql = ("Available_on.date >= CURDATE() ");
     }
     
     if (!priceSql.equals("") && !datesSql.equals("")) {
@@ -68,8 +70,10 @@ public class SearchController {
     sql = sql + String.format("distance <= %d ", maxDistance);
     
     if (sort == 1) {
-      sql = sql + "ORDER BY price, date;";
+      sql = sql + "ORDER BY price ASC, date;";
     } else if (sort == 2) {
+      sql = sql + "ORDER BY price DESC, date";
+    } else if (sort == 3) {
       sql = sql + "ORDER BY distance, date;";
     }
     
@@ -123,9 +127,13 @@ public class SearchController {
     }
         
     if (sort == 1) {
-      sql = sql + "ORDER BY price;";
+      sql = sql + "ORDER BY price ASC;";
     } else if (sort == 2) {
-      sql = sql + "ORDER BY date;";
+        sql = sql + "ORDER BY date DESC;";
+    } else if (sort == 3) {
+      sql = sql + "ORDER BY date ASC;";
+    } else if (sort == 3) {
+      sql = sql + "ORDER BY date DESC;";
     }
     
     ResultSet rs = null;
