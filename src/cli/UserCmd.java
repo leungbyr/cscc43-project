@@ -455,7 +455,7 @@ public class UserCmd {
     } while (!info[5].matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
     
     List<Amenity> amenities = this.getAmenities();
-    List<AvailableDate> availableDates = this.getAvailableDates();
+    List<AvailableDate> availableDates = this.getAvailableDates(info[1], info[2]);
     ListingController listingMngr = new ListingController();
     boolean inserted = listingMngr.insertListing(this.username, listingType, info[0], info[1], info[2], info[3], info[4], info[5], availableDates, amenities);
     if (inserted) {
@@ -465,7 +465,7 @@ public class UserCmd {
     }
   }
   
-  private List<AvailableDate> getAvailableDates() {
+  private List<AvailableDate> getAvailableDates(String lat, String lon) {
     ArrayList<AvailableDate> availableDates = new ArrayList<AvailableDate>();
     boolean done = false;
     
@@ -513,10 +513,15 @@ public class UserCmd {
       
       BigDecimal price = null;
       while (price == null) {
-        System.out.print("Price for this date range: $");
+        ListingController listingMngr = new ListingController();
+        double suggestedPrice = listingMngr.getSuggestedPrice(lat, lon, 100);
+        String priceString = new BigDecimal(suggestedPrice).setScale(2, RoundingMode.HALF_EVEN).toString();
+        System.out.print("Price for this date range (suggested price = $" + priceString + "): $");
         String priceInput = sc.nextLine();
-        if (priceInput.matches("^\\d{0,8}(\\.\\d{1,4})?$")) {
+        if (priceInput.matches("^\\d+(,\\d{3})*(\\.\\d{1,2})?$")) {
           price = new BigDecimal(priceInput);
+        } else if (priceInput.equals("")) {
+          price = new BigDecimal(priceString);
         }
       }
       
@@ -532,18 +537,21 @@ public class UserCmd {
   private List<Amenity> getAmenities() {
     ArrayList<Amenity> amenities = new ArrayList<Amenity>();
     Amenity values[] = Amenity.values();
+    ListingController listingMngr = new ListingController();
     
     // Print options
     System.out.println("=========AMENITIES=========");
     for (int i = 0; i < values.length; i++) {
-      System.out.println((i + 1) + ". " + values[i].toString());
+      double amenityValue = listingMngr.getAmenityValue(values[i]);
+      String valueString = new BigDecimal(amenityValue).setScale(2, RoundingMode.HALF_EVEN).toString();
+      System.out.println((i + 1) + ". " + values[i].toString() + " (Estimated value = $" + valueString + ")");
     }
     
     // Parse input
     String input = "";
     do {
       try {
-        System.out.print("Choose amenities [0-" + values.length + "] (separate by commas): ");
+        System.out.print("Choose amenities [1-" + values.length + "] (separate by commas): ");
         input = sc.nextLine();
         if (input.equals("")) {
           break;
@@ -552,7 +560,7 @@ public class UserCmd {
         List<String> chosen = Arrays.asList(input.split("\\s*,\\s*"));
         for (String num : chosen) {
           int choice = Integer.parseInt(num);
-          if (choice <= values.length) {
+          if (choice > 0 && choice <= values.length) {
             amenities.add(values[choice - 1]);
           }
         }

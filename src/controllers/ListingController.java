@@ -57,6 +57,30 @@ public class ListingController {
     
     return true;
   }
+  
+  public double getAmenityValue(Amenity amenity) {
+    String amenityInSql = String.format("SELECT AVG(price), COUNT(name) FROM Available_on INNER JOIN Offers ON Available_on.lat = Offers.lat AND Available_on.lon = Offers.lon WHERE name = '%s';", amenity.name());
+    String amenityNotInSql = String.format("SELECT AVG(price), COUNT(name) FROM Available_on INNER JOIN Offers ON Available_on.lat = Offers.lat AND Available_on.lon = Offers.lon WHERE name <> '%s';", amenity.name());
+    double amenityVal = -1;
+    
+    try {
+      ResultSet rs = this.st.executeQuery(amenityInSql);
+      rs.next();
+      double amenityInAvg = rs.getDouble("AVG(price)");
+      double amenityInCount = rs.getDouble("COUNT(name)");
+      rs = this.st.executeQuery(amenityNotInSql);
+      rs.next();
+      double amenityNotInAvg = rs.getDouble("AVG(price)");
+      double amenityNotInCount = rs.getDouble("COUNT(name)");
+      double amenityInWeighted = (amenityInCount == 0) ? 0 : (amenityInAvg / amenityInCount);
+      double amenityNotInWeighted = (amenityNotInCount == 0) ? 0 : (amenityNotInAvg / amenityNotInCount);
+      amenityVal = amenityInWeighted - amenityNotInWeighted;
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return amenityVal;
+  }
 
   public ResultSet printUpcomingBookings(String username) { 
     String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE canceled = 0 AND sin = ? AND date >= (SELECT CURDATE()) ORDER BY date;";
@@ -140,20 +164,32 @@ public class ListingController {
     return sin;
   }
   
-  private BigDecimal[] getNearestListingPrices(String lat, String lon, int numListings) {
-    BigDecimal[] prices = new BigDecimal[numListings];
-    String sql = String.format("SELECT lat, lon, SQRT(POW(69.1 * (lat - %s), 2) + POW(69.1 * (%s - lon) * COS(lat / 57.3), 2)) AS distance FROM Available_on WHERE removed = 0 ORDER BY distance;",
+  public double getSuggestedPrice(String lat, String lon, int numListings) {
+    String sql = String.format("SELECT lat, lon, price, SQRT(POW(69.1 * (lat - %s), 2) + POW(69.1 * (%s - lon) * COS(lat / 57.3), 2)) AS distance FROM Available_on WHERE removed = 0 ORDER BY distance;",
         lat, lon);
+    double[] prices = new double[numListings];
+    double[] distances = new double[numListings];
+    double totalDist = 0;
     
     try {
       ResultSet rs = this.st.executeQuery(sql);
-      for (int i = 0; rs.next() && i < numListings; i++) {
-        String price = rs.getString("price");
-        prices[i] = new BigDecimal(price);
+      int i = 0;
+      for (; rs.next() && i < numListings; i++) {
+        prices[i] = rs.getDouble("price");
+        distances[i] = rs.getDouble("distance");
+        totalDist = totalDist + distances[i];
       }
+      
+      numListings = i;
     } catch (Exception e) { e.printStackTrace(); }
     
-    return prices;
+    double suggestedPrice = 0;
+    for (int i = 0; i < numListings; i++) {
+      double distanceFrac = distances[i] / totalDist;
+      suggestedPrice = suggestedPrice + (prices[i] * distanceFrac);  
+    }
+    
+    return suggestedPrice;
   }
 
   public boolean bookListing(String username, String lat, String lon, Date date, BigDecimal price) {
