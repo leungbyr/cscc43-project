@@ -232,7 +232,7 @@ public class SearchCmd {
       } catch (NumberFormatException e) {
         op = -1;
       }
-    } while (op < 0 || op > 2);
+    } while (op < 0 || op > 3);
     
     if (op == 0) {
       return;
@@ -258,7 +258,18 @@ public class SearchCmd {
         e.printStackTrace();
       }
     } else if (op == 3) {
-      
+      CommentsController commentsMngr = new CommentsController();
+      ResultSet rs = commentsMngr.getListingComments(lat, lon);
+      try {
+        System.out.println("======COMMENTS ON LISTING======");
+        while (rs.next()) {
+          String comment = rs.getString("text");
+          String rating = rs.getString("rating");
+          System.out.println("(" + rating + " stars) " + comment);
+        }
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
     }
   }
 

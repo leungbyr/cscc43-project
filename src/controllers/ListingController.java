@@ -110,7 +110,8 @@ public class ListingController {
   }
 
   public ResultSet printPastBookings(String username) {
-    String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE sin = ? AND date < (SELECT CURDATE());";
+    //String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE sin = ? AND date < (SELECT CURDATE());";
+    String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE sin = ?;";
     ResultSet rs = null;
     
     try {

@@ -229,6 +229,98 @@ public class UserCmd {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    
+    int num = -1;
+    while (num < 0) {
+      System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to comment/rate the listing or host: ");
+      String input = sc.nextLine();
+      try {
+        num = Integer.parseInt(input);
+        if (num == 0) {
+          return;
+        } else if (num < 0 || num > (i - 1)) {
+          num = -1;
+        }
+      } catch (NumberFormatException e) {
+        // Loop again
+      }
+    }
+    
+    try {
+      rs.absolute(num);
+      String lat = rs.getString("lat");
+      String lon = rs.getString("lon");
+      Date date = rs.getDate("date");
+      this.bookedComment(lat, lon, date);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void bookedComment(String lat, String lon, Date date) {
+    int op = -1;
+    do {
+      System.out.println("=======COMMENT OPTIONS=======");
+      System.out.println("0. Back");
+      System.out.println("1. Comment and rate the host");
+      System.out.println("2. Comment and rate the listing");
+      System.out.print("Choose one of the previous options [0-2]: ");
+      String sortInput = sc.nextLine();
+      
+      try {
+        op = Integer.parseInt(sortInput);
+      } catch (NumberFormatException e) {
+        op = -1;
+      }
+    } while (op < 0 || op > 2);
+    
+    if (op == 0) {
+      return;
+    }
+    
+    if (op == 1) {
+      int rating = -1;
+      while (rating < 0) {
+        System.out.print("Enter a rating (1-5) or 0 to go back: ");
+        String ratingInput = sc.nextLine();
+        try {
+          rating = Integer.parseInt(ratingInput);
+          if (rating == 0) {
+            return;
+          } else if (rating < 1 || rating > 5) {
+            rating = -1;
+          }
+        } catch (NumberFormatException e) {
+          // Loop again
+        }
+      }
+      
+      System.out.println("Comment: ");
+      String comment = sc.nextLine();
+      CommentsController commentsMngr = new CommentsController();
+      commentsMngr.hostComment(this.username, lat, lon, date, rating, comment);
+    } else if (op == 2) {
+      int rating = -1;
+      while (rating < 0) {
+        System.out.print("Enter a rating (1-5) or 0 to go back: ");
+        String ratingInput = sc.nextLine();
+        try {
+          rating = Integer.parseInt(ratingInput);
+          if (rating == 0) {
+            return;
+          } else if (rating < 1 || rating > 5) {
+            rating = -1;
+          }
+        } catch (NumberFormatException e) {
+          // Loop again
+        }
+      }
+      
+      System.out.println("Comment: ");
+      String comment = sc.nextLine();
+      CommentsController commentsMngr = new CommentsController();
+      commentsMngr.listingComment(this.username, lat, lon, date, rating, comment);
+    }
   }
 
   private void showListings() {

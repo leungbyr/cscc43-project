@@ -64,10 +64,31 @@ public class CommentsController {
       e.printStackTrace();
     }
   }
+  
+  public void listingComment(String renterUsername, String lat, String lon, Date date, int rating, String comment) {
+    String commentsSql = "INSERT INTO Comments(date, text, rating) VALUES (CURDATE(), ?, ?);";
+    String postedOnSql = String.format("INSERT INTO Posted_on_listing(id, lat, lon) VALUES (LAST_INSERT_ID(), ?, ?)", lat, lon);
+    String postedBySql = "INSERT INTO Posted_by(id, sin) VALUES (LAST_INSERT_ID(), ?);";
+    
+    try {
+      PreparedStatement preparedStmt = conn.prepareStatement(commentsSql);
+      preparedStmt.setString(1, comment);
+      preparedStmt.setInt(2, rating);
+      preparedStmt.execute();
+      preparedStmt = conn.prepareStatement(postedOnSql);
+      preparedStmt.setString(1, lat);
+      preparedStmt.setString(2, lon);
+      preparedStmt.execute();
+      preparedStmt = conn.prepareStatement(postedBySql);
+      preparedStmt.setString(1, this.getSin(renterUsername));
+      preparedStmt.execute();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+  }
 
   public ResultSet getHostComments(String lat, String lon, Date date) {
     ResultSet rs = null;
-    java.sql.Date sqlDate = new java.sql.Date(date.getTime());
     String sql = String.format("SELECT text, rating FROM Comments INNER JOIN Posted_on_profile ON Comments.id = Posted_on_profile.id WHERE sin = (SELECT sin FROM Hosted_by WHERE lat = %s AND lon = %s);", 
         lat, lon);
     
@@ -108,5 +129,20 @@ public class CommentsController {
     
     return rs;
   }
+
+  public ResultSet getListingComments(String lat, String lon) {
+    ResultSet rs = null;
+    String sql = String.format("SELECT text, rating FROM Comments INNER JOIN Posted_on_listing ON Comments.id = Posted_on_listing.id WHERE lat = %s AND lon = %s;", 
+        lat, lon);
+    
+    try {
+      rs = this.st.executeQuery(sql);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return rs;
+  }
+
 }
 
