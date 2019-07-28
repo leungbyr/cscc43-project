@@ -79,7 +79,7 @@ public class ListingController {
         + "FROM Listings "
         + "INNER JOIN Hosted_by ON Listings.lat = Hosted_by.lat AND Listings.lon = Hosted_by.lon "
         + "INNER JOIN Available_on ON Listings.lat = Available_on.lat AND Listings.lon = Available_on.lon "
-        + "WHERE sin = %s AND removed = 0 ORDER BY date;", this.getSin(username));
+        + "WHERE sin = %s AND removed = 0 AND date >= CURDATE() ORDER BY date;", this.getSin(username));
     
     ResultSet rs = null;
     try {
@@ -110,8 +110,7 @@ public class ListingController {
   }
 
   public ResultSet printPastBookings(String username) {
-    //String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE sin = ? AND date < (SELECT CURDATE());";
-    String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE sin = ?;";
+    String sql = "SELECT * FROM Listings INNER JOIN Has_rented ON Listings.lat = Has_rented.lat AND Listings.lon = Has_rented.lon WHERE sin = ? AND date < (SELECT CURDATE());";
     ResultSet rs = null;
     
     try {

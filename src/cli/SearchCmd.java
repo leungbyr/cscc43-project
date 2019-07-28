@@ -114,6 +114,7 @@ public class SearchCmd {
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();
     ResultSet rs = searchMngr.byVicinity(lat, lon, maxDistance, sort, filters);
+    System.out.println("=======SEARCH RESULTS=======");
     this.showListings(rs, true);
   }
   
@@ -254,6 +255,8 @@ public class SearchCmd {
           String rating = rs.getString("rating");
           System.out.println("(" + rating + " stars) " + comment);
         }
+        
+        this.listingOptions(lat, lon, date, price);
       } catch (SQLException e) {
         e.printStackTrace();
       }
@@ -267,6 +270,8 @@ public class SearchCmd {
           String rating = rs.getString("rating");
           System.out.println("(" + rating + " stars) " + comment);
         }
+        
+        this.listingOptions(lat, lon, date, price);
       } catch (SQLException e) {
         e.printStackTrace();
       }

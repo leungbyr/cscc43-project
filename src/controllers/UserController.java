@@ -21,7 +21,7 @@ public class UserController {
     this.st = sqlMngr.st;
   }
   
-  public void insertUser(String username, String password, String firstName, String lastName, String address, String dob, String sin, String occupation) {
+  public boolean insertUser(String username, String password, String firstName, String lastName, String address, String dob, String sin, String occupation) {
     DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
     java.sql.Date sqlDate = null;
     
@@ -44,7 +44,12 @@ public class UserController {
       preparedStmt.setDate(6, sqlDate);
       preparedStmt.setString(7, occupation);
       preparedStmt.execute();
-    } catch (Exception e) { e.printStackTrace(); }
+    } catch (Exception e) { 
+      e.printStackTrace();
+      return false;
+    }
+    
+    return true;
   }
 
   public void deleteUser(String username) {

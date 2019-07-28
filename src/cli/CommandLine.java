@@ -155,7 +155,12 @@ public class CommandLine {
     info[7] = sc.nextLine();
     
     UserController userMngr = new UserController();
-    userMngr.insertUser(info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
+    boolean created = userMngr.insertUser(info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
+    if (created) {
+      System.out.println("Account created!");
+    } else {
+      System.out.println("Could not create account.");
+    }
   }
 
   private void userLogin() {
