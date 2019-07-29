@@ -3,7 +3,10 @@ package enums;
 public enum ListingType {
   HOUSE ("Full house"),
   APARTMENT ("Apartment"),
-  ROOM ("Room");
+  ROOM ("Room"),
+  LOFT ("Loft"),
+  TENT ("Tent"),
+  CASTLE ("Castle");
   
   private final String name;
   

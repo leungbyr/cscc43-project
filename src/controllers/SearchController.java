@@ -166,7 +166,9 @@ public class SearchController {
     } else if (sort == 2) {
       sql = sql + " ORDER BY price DESC, date";
     } else if (sort == 3) {
-      sql = sql + " ORDER BY distance, date";
+      sql = sql + " ORDER BY distance ASC, date";
+    } else if (sort == 4) {
+      sql = sql + " ORDER BY distance DESC, date";
     }
     
     try {   
@@ -310,7 +312,9 @@ public class SearchController {
     } else if (sort == 2) {
       sql = sql + " ORDER BY price DESC, date";
     } else if (sort == 3) {
-      sql = sql + " ORDER BY distance, date";
+      sql = sql + " ORDER BY date ASC, price";
+    } else if (sort == 4) {
+      sql = sql + " ORDER BY date DESC, price";
     }
     
     try {   

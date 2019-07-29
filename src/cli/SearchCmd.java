@@ -101,7 +101,8 @@ public class SearchCmd {
       System.out.println("Sort by:");
       System.out.println("1. Price (ascending)");
       System.out.println("2. Price (descending)");
-      System.out.println("3. Distance");
+      System.out.println("3. Distance (ascending)");
+      System.out.println("4. Distance (descending)");
       System.out.print("Choose one of the previous options [1-3]: ");
       String sortInput = sc.nextLine();
 

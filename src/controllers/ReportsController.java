@@ -203,7 +203,7 @@ public class ReportsController {
   }
 
   public void printCommercialHostsInCountry(String country) {
-    String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Hosted_by NATURAL JOIN Listings WHERE country = ? GROUP BY sin)";
+    String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT Hosted_by.sin, COUNT(*) AS counts FROM Listings NATURAL JOIN Hosted_by JOIN Users ON Users.sin=Hosted_by.sin WHERE country = ? GROUP BY sin)";
 
     PreparedStatement ps = null;
     ResultSet rs = null;
@@ -234,7 +234,7 @@ public class ReportsController {
   }
 
   public void printCommercialHostsInCountryAndCity(String country, String city) {
-    String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Hosted_by NATURAL JOIN Listings WHERE country = ? AND city = ? GROUP BY sin)";
+    String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT Hosted_by.sin, COUNT(*) AS counts FROM Listings NATURAL JOIN Hosted_by JOIN Users ON Users.sin=Hosted_by.sin WHERE country = ? AND city = ? GROUP BY sin)";
 
     PreparedStatement ps = null;
     ResultSet rs = null;
@@ -338,7 +338,7 @@ public class ReportsController {
 
       ps.executeUpdate();
       // Perform query on the view      
-      sql = "SELECT sin FROM RenterCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM RenterCancelationsWithinYear) AS temp";
+      sql = "SELECT sin, counts FROM RenterCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM RenterCancelationsWithinYear) AS temp";
 
       ps = conn.prepareStatement(sql);
 
@@ -346,7 +346,7 @@ public class ReportsController {
 
       System.out.println("=== Largest Number of Cancelations By Renters ===");
       while (rs.next()) {
-        System.out.printf("User sin %s\n", rs.getString("sin"));
+        System.out.printf("User sin %s: %d cancelations\n", rs.getString("sin"), rs.getInt("counts"));
       }
       // Remove view now that we're done
       sql = "DROP VIEW RenterCancelationsWithinYear";
@@ -368,7 +368,7 @@ public class ReportsController {
 
       ps.executeUpdate();
       // Perform query on the view      
-      sql = "SELECT sin FROM HostCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM HostCancelationsWithinYear) AS temp";
+      sql = "SELECT sin, counts FROM HostCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM HostCancelationsWithinYear) AS temp";
 
       ps = conn.prepareStatement(sql);
 
@@ -376,7 +376,7 @@ public class ReportsController {
 
       System.out.println("=== Largest Number of Cancelations By Hosts ===");
       while (rs.next()) {
-        System.out.printf("User sin %s\n", rs.getString("sin"));
+        System.out.printf("User sin %s: %d cancelations\n", rs.getString("sin"), rs.getInt("counts"));
       }
       // Remove view now that we're done
       sql = "DROP VIEW HostCancelationsWithinYear";
@@ -434,7 +434,8 @@ public class ReportsController {
           freqListOrdered.add(i, noun);
         }
         
-        for (int i=0; i<5; i++) {
+        int limit = freqListOrdered.size() > 5 ? 5 : freqListOrdered.size();
+        for (int i=0; i<limit; i++) {
           if (i != 0) {
             System.out.print(", ");
           }

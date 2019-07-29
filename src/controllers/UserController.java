@@ -53,6 +53,24 @@ public class UserController {
   }
 
   public void deleteUser(String username) {
+    String _sql = String.format("SELECT lat, lon FROM Hosted_by NATURAL JOIN Listings JOIN Users ON Hosted_by.sin=Users.sin WHERE username=?");
+    try {
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      
+      ps = conn.prepareStatement(_sql);
+      ps.setString(1, username);
+      rs = ps.executeQuery();
+      
+      ListingController lc = new ListingController();
+      while (rs.next()) {
+        String _sql2 = "DELETE FROM Listings WHERE lat=? AND lon=?";
+        ps = conn.prepareStatement(_sql2);
+        ps.setBigDecimal(1, rs.getBigDecimal("lat"));
+        ps.setBigDecimal(2, rs.getBigDecimal("lon"));
+        ps.executeUpdate();
+      }
+    } catch (Exception e) { e.printStackTrace(); }
     String sql = String.format("DELETE FROM Users WHERE username='%s'",
                                 username);
 
