@@ -68,8 +68,8 @@ public class ReportsCmd {
   }
 
   private void commentsReport() {
-    // TODO Auto-generated method stub
-    
+    ReportsController reportsMngr = new ReportsController();
+    reportsMngr.mostPopularNounForListings();
   }
   
   private void hostCancellations() {

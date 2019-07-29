@@ -5,6 +5,16 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.PropertiesUtils;
 
 public class ReportsController {
 
@@ -194,7 +204,7 @@ public class ReportsController {
 
   public void printCommercialHostsInCountry(String country) {
     String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Hosted_by NATURAL JOIN Listings WHERE country = ? GROUP BY sin)";
-    
+
     PreparedStatement ps = null;
     ResultSet rs = null;
     try {
@@ -205,9 +215,9 @@ public class ReportsController {
       ps.executeUpdate();
       // Perform query on view
       sql = "SELECT sin FROM PossibleCommercialHosts AS a INNER JOIN (SELECT SUM(counts) AS sum FROM PossibleCommercialHosts) AS b ON a.counts > 0.10*b.sum";
-      
+
       ps = conn.prepareStatement(sql);
-      
+
       rs = ps.executeQuery();
 
       System.out.printf("=== Potential Commercial Hosts in %s ===\n", country);
@@ -216,16 +226,16 @@ public class ReportsController {
       }
       // Delete view now that we're done
       sql = "DROP VIEW PossibleCommercialHosts";
-      
+
       ps = conn.prepareStatement(sql);
-      
+
       ps.executeUpdate();
     } catch (Exception e) { e.printStackTrace(); }
   }
 
   public void printCommercialHostsInCountryAndCity(String country, String city) {
     String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Hosted_by NATURAL JOIN Listings WHERE country = ? AND city = ? GROUP BY sin)";
-    
+
     PreparedStatement ps = null;
     ResultSet rs = null;
     try {
@@ -239,18 +249,18 @@ public class ReportsController {
       sql = "SELECT sin FROM PossibleCommercialHosts AS a INNER JOIN (SELECT SUM(counts) AS sum FROM PossibleCommercialHosts) AS b ON a.counts > 0.10*b.sum";
 
       ps = conn.prepareStatement(sql);
-      
+
       rs = ps.executeQuery();
-      
+
       System.out.printf("=== Potential Commercial Hosts in %s, %s ===\n", city, country);
       while (rs.next()) {
         System.out.printf("User sin %s\n", rs.getString("sin"));
       }
       // Delete view now that we're done
       sql = "DROP VIEW PossibleCommercialHosts";
-      
+
       ps = conn.prepareStatement(sql);
-      
+
       ps.executeUpdate();
     } catch (Exception e) { e.printStackTrace(); }
   }
@@ -262,7 +272,7 @@ public class ReportsController {
     } else {
       sql = "SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Has_rented WHERE date <= ? AND date >= ? GROUP BY sin ORDER BY counts DESC"; 
     }
-    
+
 
     PreparedStatement ps = null;
     ResultSet rs = null;
@@ -274,7 +284,7 @@ public class ReportsController {
       }
 
       rs = ps.executeQuery();
-      
+
       int rank = 1;
       System.out.println("=== Ranks of Renters Overall ===");
       while (rs.next()) {
@@ -301,7 +311,7 @@ public class ReportsController {
       }
 
       rs = ps.executeQuery();
-      
+
       int rank = 1;
       String oldCity = "";
       System.out.println("=== Ranks of Renters Per City ===");
@@ -319,61 +329,119 @@ public class ReportsController {
 
   public void renterCancellationsRanking() {
     String sql = "CREATE VIEW RenterCancelationsWithinYear AS (SELECT sin, COUNT(*) as counts FROM Has_rented WHERE date > CURDATE() - 365 AND canceled = 1 GROUP BY sin)";
-    
+
     PreparedStatement ps = null;
     ResultSet rs = null;
     try {
       // Create view as a way to refer to the complex query
       ps = conn.prepareStatement(sql);
-      
+
       ps.executeUpdate();
       // Perform query on the view      
       sql = "SELECT sin FROM RenterCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM RenterCancelationsWithinYear) AS temp";
 
       ps = conn.prepareStatement(sql);
-      
+
       rs = ps.executeQuery();
-      
+
       System.out.println("=== Largest Number of Cancelations By Renters ===");
       while (rs.next()) {
         System.out.printf("User sin %s\n", rs.getString("sin"));
       }
       // Remove view now that we're done
       sql = "DROP VIEW RenterCancelationsWithinYear";
-      
+
       ps = conn.prepareStatement(sql);
-      
+
       ps.executeUpdate();
     } catch (Exception e) { e.printStackTrace(); }
   }
 
   public void hostCancellationsRanking() {
     String sql = "CREATE VIEW HostCancelationsWithinYear AS (SELECT sin, COUNT(*) as counts FROM Hosted_by NATURAL JOIN Available_on WHERE date > DATE_SUB(CURDATE(), INTERVAL 365 DAY) AND removed = 1 GROUP BY sin)";
-    
+
     PreparedStatement ps = null;
     ResultSet rs = null;
     try {
       // Create view as a way to refer to the complex query
       ps = conn.prepareStatement(sql);
-      
+
       ps.executeUpdate();
       // Perform query on the view      
       sql = "SELECT sin FROM HostCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM HostCancelationsWithinYear) AS temp";
 
       ps = conn.prepareStatement(sql);
-      
+
       rs = ps.executeQuery();
-      
+
       System.out.println("=== Largest Number of Cancelations By Hosts ===");
       while (rs.next()) {
         System.out.printf("User sin %s\n", rs.getString("sin"));
       }
       // Remove view now that we're done
       sql = "DROP VIEW HostCancelationsWithinYear";
-      
+
       ps = conn.prepareStatement(sql);
-      
+
       ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+
+  public void mostPopularNounForListings() {
+    HashMap<String, HashMap<String, Integer>> coordToFreqList = new HashMap<>();
+    
+    String sql = "SELECT text, lat, lon FROM comments NATURAL JOIN posted_on_listing ORDER BY lat, lon";
+
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+
+      rs = ps.executeQuery();
+
+      while (rs.next()) {
+        String[] tokens = rs.getString("text").split(" ");
+        String key = rs.getString("lat") + ", " + rs.getString("lon");
+        
+        if (!coordToFreqList.containsKey(key)) {
+          coordToFreqList.put(key, new HashMap<String, Integer>());
+        }
+        
+        HashMap<String, Integer> freqList = coordToFreqList.get(key);
+        
+        for (String s : tokens) {
+          if (!freqList.containsKey(s)) {
+            freqList.put(s, 0);
+          }
+          freqList.replace(s, freqList.get(s) + 1);
+        }
+      }
+      
+      for (String lat_lon : coordToFreqList.keySet()) {
+        HashMap<String, Integer> temp = coordToFreqList.get(lat_lon);
+        System.out.printf("Top 5 nouns for (%s): ", lat_lon);
+        ArrayList<String> freqListOrdered = new ArrayList<>();
+        for (String noun : temp.keySet()) {
+          int target = temp.get(noun);
+          int i=0;
+          int opponent = freqListOrdered.size() > 0 ? temp.get(freqListOrdered.get(i)) : 0;
+          while (i < freqListOrdered.size() && opponent > target) {
+            if (opponent <= target) {
+              freqListOrdered.add(i, noun);
+            }
+            opponent = temp.get(freqListOrdered.get(++i));
+          }
+          freqListOrdered.add(i, noun);
+        }
+        
+        for (int i=0; i<5; i++) {
+          if (i != 0) {
+            System.out.print(", ");
+          }
+          System.out.print(freqListOrdered.get(i));
+        }
+        System.out.println();
+      }
     } catch (Exception e) { e.printStackTrace(); }
   }
 }
