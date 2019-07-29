@@ -1,10 +1,11 @@
 package controllers;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
+import java.util.ArrayList;
 import cli.SearchFilter;
 import enums.Amenity;
 
@@ -20,130 +21,323 @@ public class SearchController {
     this.st = sqlMngr.st;
   }
 
-  public ResultSet byVicinity(String lat, String lon, int maxDistance, int sort, SearchFilter filters) {
-    // sort: 1 = by price, 2 = by distance
-    // Building sql query
-    String sql = String.format(
-        "SELECT DISTINCT Listings.lat, Listings.lon, price, date, type, address, city, country, postal, SQRT(POW(111.2 * (Listings.lat - %s), 2) + POW(111.2 * (%s - Listings.lon) * COS(Listings.lat / 57.3), 2)) AS distance "
-        + "FROM Listings "
-        + "INNER JOIN Available_on ON Listings.lat = Available_on.lat AND Listings.lon = Available_on.lon "
-        + "INNER JOIN Offers ON Listings.lat = Offers.lat AND Listings.lon = Offers.lon ", lat, lon);
-    
-    String priceSql = "";
-    if (filters.minPrice > 0 && filters.maxPrice == -1) {
-      priceSql = String.format("price >= %d ", filters.minPrice);
-    } else if (filters.maxPrice != -1) {
-      priceSql = String.format("price BETWEEN %d AND %d ", filters.minPrice, filters.maxPrice);
-    }
-    
-    String datesSql = "";
-    if (!filters.startDate.equals("") && !filters.endDate.equals("")) {
-      datesSql = String.format("Available_on.date >= CURDATE() AND Available_on.date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate);
-    } else {
-      datesSql = ("Available_on.date >= CURDATE() ");
-    }
-    
-    if (!priceSql.equals("") && !datesSql.equals("")) {
-      sql = sql + "WHERE " + priceSql + "AND " + datesSql;
-    } else if (!priceSql.equals("")) {
-      sql = sql + "WHERE " + priceSql;
-    } else if (!datesSql.equals("")) {
-      sql = sql + "WHERE " + datesSql;
-    }
-    
-    if (filters.amenities.size() > 0) {
-      if (priceSql.equals("") && datesSql.equals("")) {
-        sql = sql + "WHERE name IN (";
-      } else {
-        sql = sql + "AND name IN (";
+  private String helperFunction(ArrayList<String> arr, String splitToken) {
+    String sql = "";
+    for (int i=0; i<arr.size(); i++) {
+      if (i != 0) {
+        sql += splitToken + " ";
       }
-      
-      for (Amenity amenity : filters.amenities) {
-        sql = sql + "'" + amenity.name() + "', ";
+      sql += arr.get(i);
+      if (arr.size() >= 2 && i == 0) {
+        sql += " ";
       }
-      
-      sql = sql.substring(0, sql.length() - 2) + ") GROUP BY Listings.lat, Listings.lon, date HAVING COUNT(*) = " + filters.amenities.size() + " AND ";
-    } else {
-      sql = sql + "HAVING ";
     }
     
-    sql = sql + String.format("distance <= %d ", maxDistance);
-    
-    if (sort == 1) {
-      sql = sql + "ORDER BY price ASC, date;";
-    } else if (sort == 2) {
-      sql = sql + "ORDER BY price DESC, date";
-    } else if (sort == 3) {
-      sql = sql + "ORDER BY distance, date;";
-    }
-    
-    ResultSet rs = null;
-    try {
-      rs = this.st.executeQuery(sql);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    
-    return rs;
+    return sql;
   }
-
-  public ResultSet byPostalCode(String postalCode, SearchFilter filters, int sort) {
-    // sort: 1 = by price, 2 = by date
-    String sql = String.format(
-        "SELECT DISTINCT Listings.lat, Listings.lon, price, date, type, address, city, country, postal "
-        + "FROM Listings "
-        + "INNER JOIN Available_on ON Listings.lat = Available_on.lat AND Listings.lon = Available_on.lon "
-        + "INNER JOIN Offers ON Listings.lat = Offers.lat AND Listings.lon = Offers.lon "
-        + "WHERE date >= CURDATE() AND SUBSTRING(postal, 1, 3) = '%s' ", postalCode.substring(0, 3));
+  
+  private String constructSql(ArrayList<String> selectPart, ArrayList<String> fromPart, ArrayList<String> wherePart, ArrayList<String> groupByPart, ArrayList<String> havingPart) {
+    String sql = "";
+    if (!selectPart.isEmpty())
+      sql += "SELECT " + helperFunction(selectPart, ",") + " ";
+    if (!fromPart.isEmpty())
+      sql += "FROM " + helperFunction(fromPart, "NATURAL JOIN") + " ";
+    if (!wherePart.isEmpty())
+      sql += "WHERE " + helperFunction(wherePart, "AND") + " ";
+    if (!groupByPart.isEmpty())
+      sql += "GROUP BY " + helperFunction(groupByPart, ",") + " ";
+    if (!havingPart.isEmpty())
+      sql += "HAVING " + helperFunction(havingPart, ",") + " ";
     
-    String priceSql = "";
+    return sql;
+  }
+  
+  public ResultSet byVicinity(String lat, String lon, int maxDistance, int sort, SearchFilter filters) {
+    
+    ResultSet ret = null;
+    
+    ArrayList<String> selectPart = new ArrayList<>();
+    ArrayList<String> fromPart = new ArrayList<>();
+    ArrayList<String> wherePart = new ArrayList<>();
+    ArrayList<String> groupByPart = new ArrayList<>();
+    ArrayList<String> havingPart = new ArrayList<>();
+    
+    // Foundation
+    selectPart.add("lat");
+    selectPart.add("lon");
+    selectPart.add("date");
+    selectPart.add("price");
+    
+    fromPart.add("Available_on");
+    
+    // Custom price range?
     if (filters.minPrice > 0 && filters.maxPrice == -1) {
-      priceSql = String.format("price >= %d ", filters.minPrice);
+      wherePart.add(String.format("price >= %d ", filters.minPrice));
     } else if (filters.maxPrice != -1) {
-      priceSql = String.format("price BETWEEN %d AND %d ", filters.minPrice, filters.maxPrice);
+      wherePart.add(String.format("price BETWEEN %d AND %d ", filters.minPrice, filters.maxPrice));
     }
     
-    String datesSql = "";
+    // Custom date range?
     if (!filters.startDate.equals("") && !filters.endDate.equals("")) {
-      datesSql = String.format("Available_on.date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate);
+      wherePart.add(String.format("date >= CURDATE() AND date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate));
+    } else {
+      wherePart.add("date >= CURDATE() ");
     }
     
-    if (!priceSql.equals("") && !datesSql.equals("")) {
-      sql = sql + "AND " + priceSql + "AND " + datesSql;
-    } else if (!priceSql.equals("")) {
-      sql = sql + "AND " + priceSql;
-    } else if (!datesSql.equals("")) {
-      sql = sql + "AND " + datesSql;
-    }
-    
+    // Custom amenities?
     if (filters.amenities.size() > 0) {
-      sql = sql + "AND name IN (";
+      selectPart.add("name");
       
+      fromPart.add("Offers");
+      
+      // Generate string of amenities
+      String amenities = "name in (";
       for (Amenity amenity : filters.amenities) {
-        sql = sql + "'" + amenity.name() + "', ";
+        amenities = amenities + "'" + amenity.name() + "', ";
       }
+      amenities = amenities.substring(0, amenities.length() - 2) + ")";
       
-      sql = sql.substring(0, sql.length() - 2) + ") GROUP BY Listings.lat, Listings.lon, date HAVING COUNT(*) = " + filters.amenities.size() + " ";
-    }
-        
-    if (sort == 1) {
-      sql = sql + "ORDER BY price ASC;";
-    } else if (sort == 2) {
-        sql = sql + "ORDER BY date DESC;";
-    } else if (sort == 3) {
-      sql = sql + "ORDER BY date ASC;";
-    } else if (sort == 3) {
-      sql = sql + "ORDER BY date DESC;";
+      wherePart.add(amenities);
+      
+      groupByPart.add("lat");
+      groupByPart.add("lon");
+      groupByPart.add("date");
+      groupByPart.add("price");
+      groupByPart.add("name");
     }
     
-    ResultSet rs = null;
+    // Form the complex query as view
+    String sql = constructSql(selectPart, fromPart, wherePart, groupByPart, havingPart);
+    sql = String.format("CREATE OR REPLACE VIEW a AS (%s)", sql);
+    
+    // Create view
     try {
-      rs = this.st.executeQuery(sql);
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      
+      ps = conn.prepareStatement(sql);
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
+    
+    selectPart.clear();
+    fromPart.clear();
+    wherePart.clear();
+    groupByPart.clear();
+    havingPart.clear();
+    
+    // Extra level of query if amenities
+    if (filters.amenities.size() > 0) {
+      // Foundation
+      selectPart.add("lat");
+      selectPart.add("lon");
+      selectPart.add("date");
+      selectPart.add("price");
+      selectPart.add("COUNT(*) AS counts");
+      
+      fromPart.add("a");
+      
+      groupByPart.add("lat");
+      groupByPart.add("lon");
+      groupByPart.add("date");
+      groupByPart.add("price");
+      
+      havingPart.add(String.format("counts=%d", filters.amenities.size()));
+      
+      sql = constructSql(selectPart, fromPart, wherePart, groupByPart, havingPart);
+      sql = String.format("CREATE OR REPLACE VIEW temp AS (%s)", sql);
+    } else {
+      sql = "CREATE OR REPLACE VIEW temp AS (SELECT * FROM a)";
+    }
+    // Create view
+    try {
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      
+      ps = conn.prepareStatement(sql);
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
+    
+    // More simple query, so just hard-code
+    sql = String.format("SELECT *, SQRT(POW(111.2 * (lat - %s), 2) + POW(111.2 * (%s - lon) * COS(lat / 57.3), 2)) AS distance"
+        + " " + "FROM temp NATURAL JOIN Available_on NATURAL JOIN Listings WHERE removed=0 HAVING distance <= %d", lat, lon, maxDistance);
+    
+    if (sort == 1) {
+      sql = sql + " ORDER BY price ASC, date";
+    } else if (sort == 2) {
+      sql = sql + " ORDER BY price DESC, date";
+    } else if (sort == 3) {
+      sql = sql + " ORDER BY distance, date";
+    }
+    
+    try {   
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      
+      ps = conn.prepareStatement(sql);
+      
+      rs = ps.executeQuery();
+      
+      ret = rs;
     } catch (SQLException e) {
       e.printStackTrace();
     }
     
-    return rs;
+    // Delete views
+    sql = "DROP VIEW a, temp";
+    try {   
+      PreparedStatement ps = null;      
+      
+      ps = conn.prepareStatement(sql);
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return ret;
+  }
+  
+  public ResultSet byPostalCode(String postalCode, SearchFilter filters, int sort) {
+    
+    ResultSet ret = null;
+    
+    ArrayList<String> selectPart = new ArrayList<>();
+    ArrayList<String> fromPart = new ArrayList<>();
+    ArrayList<String> wherePart = new ArrayList<>();
+    ArrayList<String> groupByPart = new ArrayList<>();
+    ArrayList<String> havingPart = new ArrayList<>();
+    
+    // Foundation
+    selectPart.add("lat");
+    selectPart.add("lon");
+    selectPart.add("date");
+    selectPart.add("price");
+    
+    fromPart.add("Available_on");
+    
+    // Custom price range?
+    if (filters.minPrice > 0 && filters.maxPrice == -1) {
+      wherePart.add(String.format("price >= %d ", filters.minPrice));
+    } else if (filters.maxPrice != -1) {
+      wherePart.add(String.format("price BETWEEN %d AND %d ", filters.minPrice, filters.maxPrice));
+    }
+    
+    // Custom date range?
+    if (!filters.startDate.equals("") && !filters.endDate.equals("")) {
+      wherePart.add(String.format("date >= CURDATE() AND date BETWEEN '%s' AND '%s' ", filters.startDate, filters.endDate));
+    } else {
+      wherePart.add("date >= CURDATE() ");
+    }
+    
+    // Custom amenities?
+    if (filters.amenities.size() > 0) {
+      selectPart.add("name");
+      
+      fromPart.add("Offers");
+      
+      // Generate string of amenities
+      String amenities = "name in (";
+      for (Amenity amenity : filters.amenities) {
+        amenities = amenities + "'" + amenity.name() + "', ";
+      }
+      amenities = amenities.substring(0, amenities.length() - 2) + ")";
+      
+      wherePart.add(amenities);
+      
+      groupByPart.add("lat");
+      groupByPart.add("lon");
+      groupByPart.add("date");
+      groupByPart.add("price");
+      groupByPart.add("name");
+    }
+    
+    // Form the complex query as view
+    String sql = constructSql(selectPart, fromPart, wherePart, groupByPart, havingPart);
+    sql = String.format("CREATE OR REPLACE VIEW a AS (%s)", sql);
+    
+    // Create view
+    try {
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      
+      ps = conn.prepareStatement(sql);
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
+    
+    selectPart.clear();
+    fromPart.clear();
+    wherePart.clear();
+    groupByPart.clear();
+    havingPart.clear();
+    
+    // Extra level of query if amenities
+    if (filters.amenities.size() > 0) {
+      // Foundation
+      selectPart.add("lat");
+      selectPart.add("lon");
+      selectPart.add("date");
+      selectPart.add("price");
+      selectPart.add("COUNT(*) AS counts");
+      
+      fromPart.add("a");
+      
+      groupByPart.add("lat");
+      groupByPart.add("lon");
+      groupByPart.add("date");
+      groupByPart.add("price");
+      
+      havingPart.add(String.format("counts=%d", filters.amenities.size()));
+      
+      sql = constructSql(selectPart, fromPart, wherePart, groupByPart, havingPart);
+      sql = String.format("CREATE OR REPLACE VIEW temp AS (%s)", sql);
+    } else {
+      sql = "CREATE OR REPLACE VIEW temp AS (SELECT * FROM a)";
+    }
+    // Create view
+    try {
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      
+      ps = conn.prepareStatement(sql);
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
+    
+    // More simple query, so just hard-code
+    sql = String.format("SELECT *"
+        + " " + "FROM temp NATURAL JOIN Available_on NATURAL JOIN Listings WHERE removed=0 AND SUBSTRING(postal, 1, 3) = '%s'", postalCode.substring(0, 3));
+    
+    if (sort == 1) {
+      sql = sql + " ORDER BY price ASC, date";
+    } else if (sort == 2) {
+      sql = sql + " ORDER BY price DESC, date";
+    } else if (sort == 3) {
+      sql = sql + " ORDER BY distance, date";
+    }
+    
+    try {   
+      PreparedStatement ps = null;
+      ResultSet rs = null;
+      
+      ps = conn.prepareStatement(sql);
+      
+      rs = ps.executeQuery();
+      
+      ret = rs;
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    // Delete views
+    sql = "DROP VIEW a, temp";
+    try {   
+      PreparedStatement ps = null;      
+      
+      ps = conn.prepareStatement(sql);
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    
+    return ret;
   }
 
   public ResultSet byAddress(String address) {

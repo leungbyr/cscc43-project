@@ -1,5 +1,6 @@
 package cli;
 
+import java.util.Calendar;
 import java.util.Scanner;
 
 import controllers.ReportsController;
@@ -100,40 +101,50 @@ public class ReportsCmd {
     query[2] = sc.nextLine();
     
     ReportsController reportsMngr = new ReportsController();
-    reportsMngr.printRentersReport(query[0], query[1], query[2]);
+    if (query[2].equals("")) {
+      reportsMngr.printRentersReportOverall(query[0], query[1]);
+    } else {
+      reportsMngr.printRentersReportPerCity(query[0], query[1]);
+    }
   }
   
   private void commercialHosts() {
+    String[] query = new String[2];
+    System.out.print("Country: ");
+    query[0] = sc.nextLine();
+    System.out.print("City (unspecified = only by country): ");
+    query[1] = sc.nextLine();
+    
     ReportsController reportsMngr = new ReportsController();
-    reportsMngr.printCommercialHosts();
+    if (query[1].equals("")) {
+      reportsMngr.printCommercialHostsInCountry(query[0]);
+    } else {
+      reportsMngr.printCommercialHostsInCountryAndCity(query[0], query[1]);
+    }
   }
 
   private void hostsReport() {
-    String[] query = new String[2]; // User input
-    System.out.print("Country (unspecified = all): ");
-    query[0] = sc.nextLine();
-    System.out.print("City (unspecified = all): ");
-    query[1] = sc.nextLine();
+    String[] query = new String[1]; // User input
+    System.out.print("Per country = 0, per city = 1: ");
+    do {
+      query[0] = sc.nextLine();
+    } while (!query[0].matches("[01]"));
     
     ReportsController reportsMngr = new ReportsController();
-    reportsMngr.printHostsReport(query[0], query[1]);
+    if (query[0].equals("0")) {
+      reportsMngr.printHostsReportPerCountry();
+    } else {
+      reportsMngr.printHostsReportPerCity();
+    }
   }
 
-  private void listingsReport() {
-    String[] query = new String[3]; // User input
-    System.out.print("Country (unspecified = all): ");
-    query[0] = sc.nextLine();
-    System.out.print("City (unspecified = all): ");
-    query[1] = sc.nextLine();
-    System.out.print("Postal code (unspecified = any): ");
-    query[2] = sc.nextLine();
-    
+  private void listingsReport() {    
     ReportsController reportsMngr = new ReportsController();
-    reportsMngr.printListingsReport(query[0], query[1], query[2]);
+    reportsMngr.printListingsReport();
   }
 
   private void bookingsReport() {
-    String[] query = new String[4]; // User input
+    String[] query = new String[3]; // User input
     do {
       System.out.println("==================");
       System.out.println("Enter a date range (default = all time)");
@@ -149,11 +160,13 @@ public class ReportsCmd {
               || !query[1].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
     System.out.print("City (unspecified = all): ");
     query[2] = sc.nextLine();
-    System.out.print("Postal code (unspecified = any): ");
-    query[3] = sc.nextLine();
     
     ReportsController reportsMngr = new ReportsController();
-    reportsMngr.printBookingsReport(query[0], query[1], query[2], query[3]);
+    if (query[2].equals("")) {
+      reportsMngr.printBookingsReportByCity(query[0], query[1]);
+    } else {
+      reportsMngr.printBookingsReportByZipCode(query[0], query[1], query[2]);
+    }
   }
 
   // Print menu options

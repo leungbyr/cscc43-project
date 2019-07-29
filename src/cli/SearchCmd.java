@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import controllers.CommentsController;
+import controllers.CreditCardController;
 import controllers.ListingController;
 import controllers.SQLController;
 import controllers.SearchController;
@@ -22,7 +23,7 @@ public class SearchCmd {
   private SQLController sqlMngr = null;
   private Scanner sc = null;
   private String username = null;
-  
+
   protected SearchCmd(SQLController sqlMngr, Scanner sc, String username) {
     this.sqlMngr = sqlMngr;
     this.sc = sc;
@@ -36,21 +37,21 @@ public class SearchCmd {
       do {
         menu(); // Print Menu
         input = sc.nextLine();
-        
+
         try {
           choice = Integer.parseInt(input);
           switch (choice) { // Activate the desired functionality
-          case 1:
-            this.byVicinity();
-            break;
-          case 2:
-            this.byPostalCode();
-            break;
-          case 3:
-            this.byAddress();
-            break;
-          default:
-            break;
+            case 1:
+              this.byVicinity();
+              break;
+            case 2:
+              this.byPostalCode();
+              break;
+            case 3:
+              this.byAddress();
+              break;
+            default:
+              break;
           }
         } catch (NumberFormatException e) {
           input = "-1";
@@ -65,21 +66,21 @@ public class SearchCmd {
       return false;
     }
   }
-  
+
   private void byVicinity() {
     String lat, lon;
     int maxDistance = -1;;
-    
+
     do {
       System.out.print("Latitude: ");
       lat = sc.nextLine();
     } while (!lat.matches("(\\-?\\d+(\\.\\d+)?)"));
-    
+
     do {
       System.out.print("Longitude: ");
       lon = sc.nextLine();
     } while (!lon.matches("(\\-?\\d+(\\.\\d+)?)"));
-    
+
     while (maxDistance == -1) {
       System.out.print("Distance in km (default = 50): ");
       String distInput = sc.nextLine();
@@ -87,14 +88,14 @@ public class SearchCmd {
         maxDistance = 50;
         break;
       }
-      
+
       try {
         maxDistance = Integer.parseInt(distInput);
       } catch (NumberFormatException e) {
         // Looping and asking for input again
       }
     }
-  
+
     int sort;
     do {
       System.out.println("Sort by:");
@@ -103,32 +104,32 @@ public class SearchCmd {
       System.out.println("3. Distance");
       System.out.print("Choose one of the previous options [1-3]: ");
       String sortInput = sc.nextLine();
-      
+
       try {
         sort = Integer.parseInt(sortInput);
       } catch (NumberFormatException e) {
         sort = -1;
       }
     } while (sort < 1 || sort > 3);
-    
+
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();
     ResultSet rs = searchMngr.byVicinity(lat, lon, maxDistance, sort, filters);
     System.out.println("=======SEARCH RESULTS=======");
     this.showListings(rs, true);
   }
-  
+
   private void byPostalCode() {
     String postalCode;
     do {
       System.out.print("Postal code: ");
       postalCode = sc.nextLine();
-      
+
       if (postalCode.contains(" ")) {
         postalCode = postalCode.replace(" ", "");
       }
     } while (!postalCode.matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
-    
+
     int sort;
     do {
       System.out.println("Sort by:");
@@ -138,14 +139,14 @@ public class SearchCmd {
       System.out.println("4. Date (descending)");
       System.out.print("Choose one of the previous options [1-4]: ");
       String sortInput = sc.nextLine();
-      
+
       try {
         sort = Integer.parseInt(sortInput);
       } catch (NumberFormatException e) {
         sort = -1;
       }
     } while (sort < 1 || sort > 4);
-    
+
     SearchFilter filters = getFilters();
     SearchController searchMngr = new SearchController();
     ResultSet rs = searchMngr.byPostalCode(postalCode, filters, sort);
@@ -164,31 +165,31 @@ public class SearchCmd {
     int i = 0;
     try {
       for (i = 1; rs.next(); i++) {
-          String rsLat = rs.getString("lat");
-          String rsLon = rs.getString("lon");
-          String type = ListingType.valueOf(rs.getString("type")).toString();
-          String address = rs.getString("address");
-          String city = rs.getString("city");
-          String country = rs.getString("country");
-          String postal = rs.getString("postal");
-          String date = rs.getString("date");
-          BigDecimal price = rs.getBigDecimal("price");
-          String distString;
-          if (showDistance) {
-            BigDecimal distance = rs.getBigDecimal("distance").setScale(2, RoundingMode.HALF_EVEN);
-            distString = ", Distance: " + distance.toString() + "km";
-          } else {
-            distString = "";
-          }
-          
-          System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
-          System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
-          System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN) + distString);
+        String rsLat = rs.getString("lat");
+        String rsLon = rs.getString("lon");
+        String type = ListingType.valueOf(rs.getString("type")).toString();
+        String address = rs.getString("address");
+        String city = rs.getString("city");
+        String country = rs.getString("country");
+        String postal = rs.getString("postal");
+        String date = rs.getString("date");
+        BigDecimal price = rs.getBigDecimal("price");
+        String distString;
+        if (showDistance) {
+          BigDecimal distance = rs.getBigDecimal("distance").setScale(2, RoundingMode.HALF_EVEN);
+          distString = ", Distance: " + distance.toString() + "km";
+        } else {
+          distString = "";
+        }
+
+        System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
+        System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
+        System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN) + distString);
       }
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    
+
     int num = -1;
     while (num < 0) {
       System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to select a listing: ");
@@ -204,7 +205,7 @@ public class SearchCmd {
         // Loop again
       }
     }
-    
+
     try {
       rs.absolute(num);
       String lat = rs.getString("lat");
@@ -216,7 +217,7 @@ public class SearchCmd {
       e.printStackTrace();
     }
   }
-  
+
   private void listingOptions(String lat, String lon, Date date, BigDecimal price) {
     int op = -1;
     do {
@@ -227,23 +228,26 @@ public class SearchCmd {
       System.out.println("3. See listing comments");
       System.out.print("Choose one of the previous options [0-3]: ");
       String sortInput = sc.nextLine();
-      
+
       try {
         op = Integer.parseInt(sortInput);
       } catch (NumberFormatException e) {
         op = -1;
       }
     } while (op < 0 || op > 3);
-    
+
     if (op == 0) {
       return;
     }
-    
+
     if (op == 1) {
-      ListingController listingMngr = new ListingController();
-      boolean booked = listingMngr.bookListing(this.username, lat, lon, date, price);
-      if (booked) {
-        System.out.println("Booking successful!");
+      CreditCardController ccMngr = new CreditCardController();
+      if (ccMngr.getPaymentCard(this.username)) {
+        ListingController listingMngr = new ListingController();
+        boolean booked = listingMngr.bookListing(this.username, lat, lon, date, price);
+        if (booked) {
+          System.out.println("Booking successful!");
+        }
       }
     } else if (op == 2) {
       CommentsController commentsMngr = new CommentsController();
@@ -255,7 +259,7 @@ public class SearchCmd {
           String rating = rs.getString("rating");
           System.out.println("(" + rating + " stars) " + comment);
         }
-        
+
         this.listingOptions(lat, lon, date, price);
       } catch (SQLException e) {
         e.printStackTrace();
@@ -270,7 +274,7 @@ public class SearchCmd {
           String rating = rs.getString("rating");
           System.out.println("(" + rating + " stars) " + comment);
         }
-        
+
         this.listingOptions(lat, lon, date, price);
       } catch (SQLException e) {
         e.printStackTrace();
@@ -287,20 +291,20 @@ public class SearchCmd {
       dateRange[0] = sc.nextLine();
       System.out.print("End date (yyyy-MM-dd): ");
       dateRange[1] = sc.nextLine();
-      
+
       if (dateRange[0].equals("") && dateRange[1].equals("")) {
         break;
       }
     } while (!dateRange[0].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))")
-              || !dateRange[1].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
-    
+        || !dateRange[1].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
+
     String input1 = "-1";
     String input2 = "-1";
     int[] priceRange = new int[2];
     do {
       System.out.print("Minimum price (default = 0): $");
       input1 = sc.nextLine();
-      
+
       if (input1.equals("")) {
         priceRange[0] = 0;
       }
@@ -311,11 +315,11 @@ public class SearchCmd {
         input1 = "-1";
       }
     } while (input1.compareTo("-1") != 0);
-    
+
     do {
       System.out.print("Maximum price (default = none): $");
       input2 = sc.nextLine();
-      
+
       if (input2.equals("")) {
         priceRange[1] = -1;
       }
@@ -326,7 +330,7 @@ public class SearchCmd {
         input2 = "-1";
       }
     } while (input2.compareTo("-1") != 0);
-    
+
     ArrayList<Amenity> amenities = this.getAmenities();
     SearchFilter filter = new SearchFilter(dateRange[0], dateRange[1], priceRange[0], priceRange[1], amenities);
     return filter;
@@ -335,13 +339,13 @@ public class SearchCmd {
   private ArrayList<Amenity> getAmenities() {
     ArrayList<Amenity> amenities = new ArrayList<Amenity>();
     Amenity values[] = Amenity.values();
-    
+
     // Print options
     System.out.println("=========AMENITIES=========");
     for (int i = 0; i < values.length; i++) {
       System.out.println((i + 1) + ". " + values[i].toString());
     }
-    
+
     // Parse input
     String input = "";
     do {
@@ -351,7 +355,7 @@ public class SearchCmd {
         if (input.equals("")) {
           break;
         }
-        
+
         List<String> chosen = Arrays.asList(input.split("\\s*,\\s*"));
         for (String num : chosen) {
           int choice = Integer.parseInt(num);
@@ -359,13 +363,13 @@ public class SearchCmd {
             amenities.add(values[choice - 1]);
           }
         }
-        
+
         break;
       } catch (NumberFormatException e) {
         input = "-1";
       }
     } while (input.compareTo("-1") == 0);
-    
+
     return amenities;
   }
 

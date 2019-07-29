@@ -1,52 +1,379 @@
 package controllers;
 
 import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 public class ReportsController {
-  
+
   private SQLController sqlMngr = null;
   private Connection conn = null;
   private Statement st = null;
-  
+
   public ReportsController() {
     this.sqlMngr = SQLController.getInstance();
     this.conn = sqlMngr.conn;
     this.st = sqlMngr.st;
   }
-  
-  public void printBookingsReport(String startDate, String endDate, String city, String postalCode) {
-    // TODO Auto-generated method stub
-    
+
+  /*
+   * Provides total number of bookings in a specific date range by city.
+   */
+  public void printBookingsReportByCity(String startDate, String endDate) {
+    // By city
+    String sql;
+    if (startDate.equals("")) {
+      sql = "SELECT city, COUNT(*) AS counts FROM Has_rented NATURAL JOIN Listings GROUP BY city";
+    } else {
+      sql = "SELECT city, COUNT(*) AS counts FROM Has_rented NATURAL JOIN Listings WHERE date <= ? AND date >= ? GROUP BY city";
+    }
+
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+      if (!startDate.equals("")) {
+        ps.setDate(1, Date.valueOf(endDate));
+        ps.setDate(2, Date.valueOf(startDate));
+      }
+
+      rs = ps.executeQuery();
+
+      System.out.println("=== By City ===");
+      while (rs.next()) {
+        System.out.printf("%s: %d\n", rs.getString("city"), rs.getInt("counts"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
   }
 
-  public void printListingsReport(String country, String city, String postalCode) {
-    // TODO Auto-generated method stub
-    
+  /*
+   * Provides total number of bookings in a specific date range by zip code within a city.
+   */
+  public void printBookingsReportByZipCode(String startDate, String endDate, String city) {  
+    // By zip code
+    String sql;
+    if (startDate.equals("")) {
+      sql = "SELECT postal, COUNT(*) AS counts FROM Has_rented NATURAL JOIN Listings WHERE city = ? GROUP BY postal";
+    } else {
+      sql = "SELECT postal, COUNT(*) AS counts FROM Has_rented NATURAL JOIN Listings WHERE date <= ? AND date >= ? AND city = ? GROUP BY postal";
+    }
+
+    int i = 0;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+      if (!startDate.equals("")) {
+        ps.setDate(++i, Date.valueOf(endDate));
+        ps.setDate(++i, Date.valueOf(startDate));
+      }
+      ps.setString(++i, city);
+
+      rs = ps.executeQuery();
+
+      System.out.println("=== By Zip Code ===");
+      while (rs.next()) {
+        System.out.printf("%s: %d\n", rs.getString("postal"), rs.getInt("counts"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
   }
 
-  public void printHostsReport(String country, String city) {
-    // TODO Auto-generated method stub
-    
+  /*
+   * Provide total number of listings per country, per country and city, and per country, city, and postal code
+   */
+  public void printListingsReport() {
+    // Per country
+    String sql = "SELECT country, COUNT(*) AS counts FROM Hosted_by NATURAL JOIN Listings GROUP BY country";
+
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+
+      rs = ps.executeQuery();
+
+      System.out.println("=== Per Country ===");
+
+      while (rs.next()) {
+        System.out.printf("%s: %d\n", rs.getString("country"), rs.getInt("counts"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
+
+    // Per country, city
+    sql = "SELECT country, city, COUNT(*) AS counts FROM Hosted_by NATURAL JOIN Listings GROUP BY country, city";
+
+    ps = null;
+    rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+
+      rs = ps.executeQuery();
+
+      System.out.println("=== Per Country, City ===");
+
+      while (rs.next()) {
+        System.out.printf("%s, %s: %d\n", rs.getString("country"), rs.getString("city"), rs.getInt("counts"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
+
+    // Per country, city, postal
+    sql = "SELECT country, city, postal, COUNT(*) AS counts FROM Hosted_by NATURAL JOIN Listings GROUP BY country, city, postal";
+
+    ps = null;
+    rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+
+      rs = ps.executeQuery();
+
+      System.out.println("=== Per Country, City, Postal ===");
+
+      while (rs.next()) {
+        System.out.printf("%s, %s, %s: %d\n", rs.getString("country"), rs.getString("city"), rs.getString("postal"), rs.getInt("counts"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
   }
 
-  public void printCommercialHosts() {
-    // TODO Auto-generated method stub
-    
+  /*
+   * Provides ranks of hosts by total number of listings per country
+   */
+  public void printHostsReportPerCountry() {
+    String sql = "SELECT sin, country, COUNT(*) AS counts FROM Hosted_by NATURAL JOIN Listings GROUP BY sin, country ORDER BY country, counts DESC";
+
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+
+      rs = ps.executeQuery();
+
+      int rank = 1;
+      String oldCountry = "";
+      while (rs.next()) {
+        String newCountry = rs.getString("country"); 
+        if (!newCountry.equals(oldCountry)) {
+          oldCountry = newCountry;
+          rank = 1;
+          System.out.printf("=== Ranks of Hosts in %s ===\n", oldCountry);
+        }
+
+        System.out.printf("%d. Host sin %s: %d listings\n", rank++, rs.getString("sin"), rs.getInt("counts"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
   }
 
-  public void printRentersReport(String startDate, String endDate, String city) {
-    // TODO Auto-generated method stub
+  /*
+   * Provides ranks of hosts by total number of listings per city
+   */
+  public void printHostsReportPerCity() {
+    String sql = "SELECT sin, country, city, COUNT(*) AS counts FROM Hosted_by NATURAL JOIN Listings GROUP BY sin, country, city ORDER BY country, city, counts DESC";
+
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+
+      rs = ps.executeQuery();
+
+      int rank = 1;
+      String oldCity = "";
+      while (rs.next()) {
+        String newCity = rs.getString("city") + ", " + rs.getString("country"); 
+        if (!newCity.equals(oldCity)) {
+          oldCity = newCity;
+          rank = 1;
+          System.out.printf("=== Ranks of Hosts in %s ===\n", oldCity);
+        }
+
+        System.out.printf("%d. Host sin %s: %d listings\n", rank, rs.getString("sin"), rs.getInt("counts"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+
+  public void printCommercialHostsInCountry(String country) {
+    String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Hosted_by NATURAL JOIN Listings WHERE country = ? GROUP BY sin)";
     
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      // Create view
+      ps = conn.prepareStatement(sql);
+      ps.setString(1, country);
+
+      ps.executeUpdate();
+      // Perform query on view
+      sql = "SELECT sin FROM PossibleCommercialHosts AS a INNER JOIN (SELECT SUM(counts) AS sum FROM PossibleCommercialHosts) AS b ON a.counts > 0.10*b.sum";
+      
+      ps = conn.prepareStatement(sql);
+      
+      rs = ps.executeQuery();
+
+      System.out.printf("=== Potential Commercial Hosts in %s ===\n", country);
+      while (rs.next()) {
+        System.out.printf("User sin %s\n", rs.getString("sin"));
+      }
+      // Delete view now that we're done
+      sql = "DROP VIEW PossibleCommercialHosts";
+      
+      ps = conn.prepareStatement(sql);
+      
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+
+  public void printCommercialHostsInCountryAndCity(String country, String city) {
+    String sql = "CREATE VIEW PossibleCommercialHosts AS (SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Hosted_by NATURAL JOIN Listings WHERE country = ? AND city = ? GROUP BY sin)";
+    
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      // Create view
+      ps = conn.prepareStatement(sql);
+      ps.setString(1, country);
+      ps.setString(2, city);
+
+      ps.executeUpdate();
+      // Perform query on view
+      sql = "SELECT sin FROM PossibleCommercialHosts AS a INNER JOIN (SELECT SUM(counts) AS sum FROM PossibleCommercialHosts) AS b ON a.counts > 0.10*b.sum";
+
+      ps = conn.prepareStatement(sql);
+      
+      rs = ps.executeQuery();
+      
+      System.out.printf("=== Potential Commercial Hosts in %s, %s ===\n", city, country);
+      while (rs.next()) {
+        System.out.printf("User sin %s\n", rs.getString("sin"));
+      }
+      // Delete view now that we're done
+      sql = "DROP VIEW PossibleCommercialHosts";
+      
+      ps = conn.prepareStatement(sql);
+      
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+
+  public void printRentersReportOverall(String startDate, String endDate) {
+    String sql;
+    if (startDate.equals("")) {
+      sql = "SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Has_rented GROUP BY sin ORDER BY counts DESC";
+    } else {
+      sql = "SELECT sin, COUNT(*) AS counts FROM Users NATURAL JOIN Has_rented WHERE date <= ? AND date >= ? GROUP BY sin ORDER BY counts DESC"; 
+    }
+    
+
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+      if (!startDate.equals("")) {
+        ps.setDate(1, Date.valueOf(endDate));
+        ps.setDate(2, Date.valueOf(startDate));
+      }
+
+      rs = ps.executeQuery();
+      
+      int rank = 1;
+      System.out.println("=== Ranks of Renters Overall ===");
+      while (rs.next()) {
+        System.out.printf("%d. User sin %s\n", rank++, rs.getString("sin"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
+  }
+
+  public void printRentersReportPerCity(String startDate, String endDate) {
+    String sql;
+    if (startDate.equals("")) {
+      sql = "SELECT sin, city, counts FROM (SELECT sin, COUNT(*) AS inyear_counts FROM Users NATURAL JOIN Has_rented WHERE YEAR(date) = YEAR(CURDATE()) GROUP BY sin HAVING inyear_counts >= 2) AS a NATURAL JOIN (SELECT sin, city, COUNT(*) AS counts FROM Users NATURAL JOIN Has_rented NATURAL JOIN Listings GROUP BY sin, city) AS b ORDER BY counts DESC";
+    } else {
+      sql = "SELECT sin, city, counts FROM (SELECT sin, COUNT(*) AS inyear_counts FROM Users NATURAL JOIN Has_rented WHERE YEAR(date) = YEAR(CURDATE()) GROUP BY sin HAVING inyear_counts >= 2) AS a NATURAL JOIN (SELECT sin, city, COUNT(*) AS counts FROM Users NATURAL JOIN Has_rented NATURAL JOIN Listings WHERE date <= ? AND date >= ? GROUP BY sin, city) AS b ORDER BY counts DESC";
+    }
+
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      ps = conn.prepareStatement(sql);
+      if (!startDate.equals("")) {
+        ps.setDate(1, Date.valueOf(endDate));
+        ps.setDate(2, Date.valueOf(startDate));
+      }
+
+      rs = ps.executeQuery();
+      
+      int rank = 1;
+      String oldCity = "";
+      System.out.println("=== Ranks of Renters Per City ===");
+      while (rs.next()) {
+        String newCity = rs.getString("city");
+        if (!newCity.equals(oldCity)) {
+          oldCity = newCity;
+          rank = 1;
+          System.out.printf("=== In %s ===\n", newCity);
+        }
+        System.out.printf("%d. User sin %s\n", rank++, rs.getString("sin"));
+      }
+    } catch (Exception e) { e.printStackTrace(); }
   }
 
   public void renterCancellationsRanking() {
-    // TODO Auto-generated method stub
+    String sql = "CREATE VIEW RenterCancelationsWithinYear AS (SELECT sin, COUNT(*) as counts FROM Has_rented WHERE date > CURDATE() - 365 AND canceled = 1 GROUP BY sin)";
     
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      // Create view as a way to refer to the complex query
+      ps = conn.prepareStatement(sql);
+      
+      ps.executeUpdate();
+      // Perform query on the view      
+      sql = "SELECT sin FROM RenterCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM RenterCancelationsWithinYear) AS temp";
+
+      ps = conn.prepareStatement(sql);
+      
+      rs = ps.executeQuery();
+      
+      System.out.println("=== Largest Number of Cancelations By Renters ===");
+      while (rs.next()) {
+        System.out.printf("User sin %s\n", rs.getString("sin"));
+      }
+      // Remove view now that we're done
+      sql = "DROP VIEW RenterCancelationsWithinYear";
+      
+      ps = conn.prepareStatement(sql);
+      
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
   }
 
   public void hostCancellationsRanking() {
-    // TODO Auto-generated method stub
+    String sql = "CREATE VIEW HostCancelationsWithinYear AS (SELECT sin, COUNT(*) as counts FROM Hosted_by NATURAL JOIN Available_on WHERE date > DATE_SUB(CURDATE(), INTERVAL 365 DAY) AND removed = 1 GROUP BY sin)";
     
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    try {
+      // Create view as a way to refer to the complex query
+      ps = conn.prepareStatement(sql);
+      
+      ps.executeUpdate();
+      // Perform query on the view      
+      sql = "SELECT sin FROM HostCancelationsWithinYear NATURAL JOIN (SELECT MAX(counts) as counts FROM HostCancelationsWithinYear) AS temp";
+
+      ps = conn.prepareStatement(sql);
+      
+      rs = ps.executeQuery();
+      
+      System.out.println("=== Largest Number of Cancelations By Hosts ===");
+      while (rs.next()) {
+        System.out.printf("User sin %s\n", rs.getString("sin"));
+      }
+      // Remove view now that we're done
+      sql = "DROP VIEW HostCancelationsWithinYear";
+      
+      ps = conn.prepareStatement(sql);
+      
+      ps.executeUpdate();
+    } catch (Exception e) { e.printStackTrace(); }
   }
 }

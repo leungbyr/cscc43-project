@@ -1,0 +1,70 @@
+// Database login
+root
+
+c43project
+
+// Create profile
+admin
+admin
+Yi
+Wu
+UTSC
+1999-06-03
+555444333
+Student
+
+// Delete profile (while logged in)
+9
+y
+
+// Create listing
+1
+UTSC
+0.0
+0.0
+Toronto
+Canada
+A1B2C3
+1, 2, 4
+2019-07-28
+2019-08-10
+20
+
+// Book listing
+1
+1
+0
+0
+
+1
+
+
+
+
+1, 2
+
+// Update price failed
+4
+1
+2
+5
+
+// Insert comments for renter
+6
+1
+5
+Test message
+
+// Insert comments for host
+7
+1
+1
+5
+Test message
+
+// Insert comments for listing
+7
+1
+1
+5
+Test message

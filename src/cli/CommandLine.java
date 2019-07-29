@@ -1,6 +1,9 @@
 package cli;
 
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Scanner;
 
 import controllers.SQLController;
@@ -31,13 +34,13 @@ public class CommandLine {
       sc = null;
       sqlMngr = null;
     }
-    
+
     // Initialize tables
     sqlMngr.initializeTables();
-    
+
     return success;
   }
-  
+
   /*
    * Function that acts as destructor of an instance of this class. Performs some
    * housekeeping setting instance's private field to null
@@ -73,29 +76,29 @@ public class CommandLine {
         try {
           choice = Integer.parseInt(input);
           switch (choice) { // Activate the desired functionality
-          case 1:
-            this.userLogin();
-            break;
-          case 2:
-            this.createProfile();
-            break;
-          case 3:
-            this.runReports();
-            break;
-          case 6:
-            this.insertOperator();
-            break;
-          case 7:
-            this.selectOperator();
-            break;
-          case 8:
-            this.printSchema();
-            break;
-          case 9:
-            this.printColSchema();
-            break;
-          default:
-            break;
+            case 1:
+              this.userLogin();
+              break;
+            case 2:
+              this.createProfile();
+              break;
+            case 3:
+              this.runReports();
+              break;
+              //          case 6:
+              //            this.insertOperator();
+              //            break;
+              //          case 7:
+              //            this.selectOperator();
+              //            break;
+              //          case 8:
+              //            this.printSchema();
+              //            break;
+              //          case 9:
+              //            this.printColSchema();
+              //            break;
+            default:
+              break;
           }
         } catch (NumberFormatException e) {
           input = "-1";
@@ -119,41 +122,52 @@ public class CommandLine {
   private void createProfile() {
     // Collect required information
     String[] info = new String[8];
-    
+
     do {
       System.out.print("Username: ");
       info[0] = sc.nextLine();
     } while (!info[0].matches("^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$"));
-    
+
     do {
       System.out.print("Password: ");
       info[1] = sc.nextLine();
     } while (!info[1].matches("^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$"));
-    
+
     System.out.print("First name: ");
     info[2] = sc.nextLine();
     System.out.print("Last name: ");
     info[3] = sc.nextLine();
     System.out.print("Address: ");
     info[4] = sc.nextLine();
-    
+
     do {
       System.out.print("Date of birth (yyyy-MM-dd): ");
       info[5] = sc.nextLine();
     } while (!info[5].matches("([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"));
+
+    // Valid age check
+    Calendar validAge = Calendar.getInstance();
+    validAge.add(Calendar.YEAR, -18);
+
+    try {
+      if (new java.text.SimpleDateFormat("yyyy-MM-dd").parse(info[5]).compareTo(validAge.getTime()) > 0) {
+        System.out.println("NOT OLD ENOUGH!");
+        return;
+      }
+    } catch (Exception e) { e.printStackTrace(); }
     
     do {
       System.out.print("Social insurance number: ");
       info[6] = sc.nextLine();
-      
+
       if (info[6].contains("-") || info[6].contains(" ")) {
         info[6] = info[6].replace("-", "").replace(" ", "");
       }
     } while (!info[6].matches("^(\\d{9})$"));
-  
+
     System.out.print("Occupation: ");
     info[7] = sc.nextLine();
-    
+
     UserController userMngr = new UserController();
     boolean created = userMngr.insertUser(info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
     if (created) {
@@ -169,7 +183,7 @@ public class CommandLine {
     cred[0] = sc.nextLine();
     System.out.print("Password: ");
     cred[1] = sc.nextLine();
-    
+
     UserController userMngr = new UserController();
     boolean verified = userMngr.verifyLogin(cred[0], cred[1]);
     if (verified) {
@@ -191,11 +205,11 @@ public class CommandLine {
     System.out.println("1. Log in as user");
     System.out.println("2. Create a profile");
     System.out.println("3. Reports");
-    System.out.println("6. Insert a record.");
-    System.out.println("7. Select a record.");
-    System.out.println("8. Print schema.");
-    System.out.println("9. Print table schema.");
-    System.out.print("Choose one of the previous options [0-4]: ");
+    //    System.out.println("6. Insert a record.");
+    //    System.out.println("7. Select a record.");
+    //    System.out.println("8. Print schema.");
+    //    System.out.println("9. Print table schema.");
+    System.out.print("Choose one of the previous options [0-3]: ");
   }
 
   // Called during the initialization of an instance of the current class

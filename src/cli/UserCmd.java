@@ -26,7 +26,7 @@ public class UserCmd {
   private SQLController sqlMngr = null;
   private Scanner sc = null;
   private String username = null;
-  
+
   protected UserCmd(SQLController sqlMngr, Scanner sc, String username) {
     this.sqlMngr = sqlMngr;
     this.sc = sc;
@@ -43,35 +43,35 @@ public class UserCmd {
         try {
           choice = Integer.parseInt(input);
           switch (choice) { // Activate the desired functionality
-          case 1:
-            this.searchListings();
-            break;
-          case 2:
-            this.showCurrentBookings();
-            break;
-          case 3:
-            this.createListing();
-            break;
-          case 4:
-            this.showListings();
-            break;
-          case 5:
-            this.showRentedOut();
-            break;
-          case 6:
-            this.showPastListings();
-            break;
-          case 7:
-            this.showPastBookings();
-            break;
-          case 8:
-            this.profileComments();
-            break;
-          case 9:
-            if (this.deleteProfile()) input = "0";
-            break;
-          default:
-            break;
+            case 1:
+              this.searchListings();
+              break;
+            case 2:
+              this.showCurrentBookings();
+              break;
+            case 3:
+              this.createListing();
+              break;
+            case 4:
+              this.showListings();
+              break;
+            case 5:
+              this.showRentedOut();
+              break;
+            case 6:
+              this.showPastListings();
+              break;
+            case 7:
+              this.showPastBookings();
+              break;
+            case 8:
+              this.profileComments();
+              break;
+            case 9:
+              if (this.deleteProfile()) input = "0";
+              break;
+            default:
+              break;
           }
         } catch (NumberFormatException e) {
           input = "-1";
@@ -121,7 +121,7 @@ public class UserCmd {
         // Loop again
       }
     }
-    
+
     try {
       rs.absolute(num);
       String lat = rs.getString("lat");
@@ -149,7 +149,7 @@ public class UserCmd {
         // Loop again
       }
     }
-    
+
     System.out.println("Comment: ");
     String comment = sc.nextLine();
     CommentsController commentsMngr = new CommentsController();
@@ -175,15 +175,15 @@ public class UserCmd {
         // Loop again
       }
     }
-    
+
     try {
       rs.absolute(modifyNum);
       String modifyLat = rs.getString("lat");
       String modifyLon = rs.getString("lon");
       Date modifyDate = rs.getDate("date");
       BigDecimal price = rs.getBigDecimal("price");
-      
-      if (listingMngr.cancelBooking(modifyLat, modifyLon, modifyDate, price, false)) {
+
+      if (listingMngr.cancelBookingHost(modifyLat, modifyLon, modifyDate, price)) {
         System.out.println("Booking canceled.");
       }
     } catch (SQLException e) {
@@ -199,7 +199,7 @@ public class UserCmd {
       userMngr.deleteUser(this.username);
       return true;
     }
-    
+
     return false;
   }
 
@@ -207,7 +207,7 @@ public class UserCmd {
     ListingController listingMngr = new ListingController();
     ResultSet rs = listingMngr.printPastBookings(this.username);
     int i = 0;
-    
+
     try {
       System.out.println("=======PAST BOOKINGS=======");
       for (i = 1; rs.next(); i++) {
@@ -220,7 +220,7 @@ public class UserCmd {
         String postal = rs.getString("postal");
         String date = rs.getString("date");
         boolean canceled = rs.getBoolean("canceled");
-        
+
         System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + lat + ", " + lon + ")");
         System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
         if (canceled) System.out.print("(CANCELED) ");
@@ -229,7 +229,7 @@ public class UserCmd {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    
+
     int num = -1;
     while (num < 0) {
       System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to comment/rate the listing or host: ");
@@ -245,7 +245,7 @@ public class UserCmd {
         // Loop again
       }
     }
-    
+
     try {
       rs.absolute(num);
       String lat = rs.getString("lat");
@@ -266,18 +266,18 @@ public class UserCmd {
       System.out.println("2. Comment and rate the listing");
       System.out.print("Choose one of the previous options [0-2]: ");
       String sortInput = sc.nextLine();
-      
+
       try {
         op = Integer.parseInt(sortInput);
       } catch (NumberFormatException e) {
         op = -1;
       }
     } while (op < 0 || op > 2);
-    
+
     if (op == 0) {
       return;
     }
-    
+
     if (op == 1) {
       int rating = -1;
       while (rating < 0) {
@@ -294,7 +294,7 @@ public class UserCmd {
           // Loop again
         }
       }
-      
+
       System.out.println("Comment: ");
       String comment = sc.nextLine();
       CommentsController commentsMngr = new CommentsController();
@@ -315,7 +315,7 @@ public class UserCmd {
           // Loop again
         }
       }
-      
+
       System.out.println("Comment: ");
       String comment = sc.nextLine();
       CommentsController commentsMngr = new CommentsController();
@@ -342,7 +342,7 @@ public class UserCmd {
         // Loop again
       }
     }
-    
+
     try {
       rs.absolute(modifyNum);
       String modifyLat = rs.getString("lat");
@@ -353,32 +353,32 @@ public class UserCmd {
       e.printStackTrace();
     }
   }
-  
+
   private int printResults(ResultSet rs) {
     int i = 0;
     try {
       for (i = 1; rs.next(); i++) {
-          String rsLat = rs.getString("lat");
-          String rsLon = rs.getString("lon");
-          String type = ListingType.valueOf(rs.getString("type")).toString();
-          String address = rs.getString("address");
-          String city = rs.getString("city");
-          String country = rs.getString("country");
-          String postal = rs.getString("postal");
-          String date = rs.getString("date");
-          BigDecimal price = rs.getBigDecimal("price");
+        String rsLat = rs.getString("lat");
+        String rsLon = rs.getString("lon");
+        String type = ListingType.valueOf(rs.getString("type")).toString();
+        String address = rs.getString("address");
+        String city = rs.getString("city");
+        String country = rs.getString("country");
+        String postal = rs.getString("postal");
+        String date = rs.getString("date");
+        BigDecimal price = rs.getBigDecimal("price");
 
-          System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
-          System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
-          System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN));
+        System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + rsLat + ", " + rsLon + ")");
+        System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
+        System.out.println("Date: " + date + ", Price: $" + price.setScale(2, RoundingMode.HALF_DOWN));
       }
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    
+
     return i;
   }
-  
+
   private void modifyListing(String lat, String lon, Date date) {
     int op = -1;
     do {
@@ -388,18 +388,18 @@ public class UserCmd {
       System.out.println("2. Change price");
       System.out.print("Choose one of the previous options [0-2]: ");
       String sortInput = sc.nextLine();
-      
+
       try {
         op = Integer.parseInt(sortInput);
       } catch (NumberFormatException e) {
         op = -1;
       }
     } while (op < 0 || op > 2);
-    
+
     if (op == 0) {
       return;
     }
-    
+
     ListingController listingMngr = new ListingController();
     if (op == 1) {
       if (listingMngr.removeListing(lat, lon, date)) {
@@ -419,7 +419,7 @@ public class UserCmd {
           }
         }
       }
-     }
+    }
   }
 
   private void createListing() {
@@ -428,89 +428,89 @@ public class UserCmd {
     String[] info = new String[6];
     System.out.print("Address: ");
     info[0] = sc.nextLine();
-    
+
     do {
       System.out.print("Latitude: ");
       info[1] = sc.nextLine();
     } while (!info[1].matches("(\\-?\\d+(\\.\\d+)?)"));
-    
+
     do {
       System.out.print("Longitude: ");
       info[2] = sc.nextLine();
     } while (!info[2].matches("(\\-?\\d+(\\.\\d+)?)"));
-    
+
     System.out.print("City: ");
     info[3] = sc.nextLine();
-    
+
     System.out.print("Country: ");
     info[4] = sc.nextLine();
-    
+
     do {
       System.out.print("Postal code: ");
       info[5] = sc.nextLine();
-      
+
       if (info[5].contains(" ")) {
         info[5] = info[5].replace(" ", "");
       }
     } while (!info[5].matches("^(?!.*[DFIOQU])[A-VXY][0-9][A-Z]?[0-9][A-Z][0-9]$"));
-    
+
     List<Amenity> amenities = this.getAmenities();
     List<AvailableDate> availableDates = this.getAvailableDates(info[1], info[2]);
     ListingController listingMngr = new ListingController();
-    boolean inserted = listingMngr.insertListing(this.username, listingType, info[0], info[1], info[2], info[3], info[4], info[5], availableDates, amenities);
+    boolean inserted = listingMngr.insertListing(this.username, listingType, info[0], Double.parseDouble(info[1]), Double.parseDouble(info[2]), info[3], info[4], info[5], availableDates, amenities);
     if (inserted) {
       System.out.println("Listing successfully posted!");
     } else {
       System.out.println("Listing at this latitude and longitude already exists!");
     }
   }
-  
+
   private List<AvailableDate> getAvailableDates(String lat, String lon) {
     ArrayList<AvailableDate> availableDates = new ArrayList<AvailableDate>();
     boolean done = false;
-    
+
     while (!done) {
       System.out.println("=======AVAILABLE DATES=======");
       System.out.println("Enter a date range or 0 to finish posting listing");
-      
+
       Date startDate = null;
       while (startDate == null) {
         System.out.print("Start date (yyyy-MM-dd): ");
         String dateInput = sc.nextLine();
-        
+
         if (dateInput.equals("0"))  {
           done = true;
           break;
         }
-        
+
         try {
           startDate = new SimpleDateFormat("yyyy-MM-dd").parse(dateInput);
         } catch (ParseException e) {
           // Loop and ask for date again
         }
       }
-      
+
       if (done) break;
-      
+
       Date endDate = null;
       while (endDate == null) {
         System.out.print("End date (yyyy-MM-dd): ");
         String dateInput = sc.nextLine();
-        
+
         if (dateInput.equals("0"))  {
           done = true;
           break;
         }
-        
+
         try {
           endDate = new SimpleDateFormat("yyyy-MM-dd").parse(dateInput);
         } catch (ParseException e) {
           // Loop and ask for date again
         }
       }
-      
+
       if (done) break;
-      
+
       BigDecimal price = null;
       while (price == null) {
         ListingController listingMngr = new ListingController();
@@ -524,21 +524,21 @@ public class UserCmd {
           price = new BigDecimal(priceString);
         }
       }
-      
+
       List<Date> dates = this.datesBetween(startDate, endDate);
       for (Date date : dates) {
         availableDates.add(new AvailableDate(date, price));
       }
     }
-    
+
     return availableDates;
   }
-  
+
   private List<Amenity> getAmenities() {
     ArrayList<Amenity> amenities = new ArrayList<Amenity>();
     Amenity values[] = Amenity.values();
     ListingController listingMngr = new ListingController();
-    
+
     // Print options
     System.out.println("=========AMENITIES=========");
     for (int i = 0; i < values.length; i++) {
@@ -546,7 +546,7 @@ public class UserCmd {
       String valueString = new BigDecimal(amenityValue).setScale(2, RoundingMode.HALF_EVEN).toString();
       System.out.println((i + 1) + ". " + values[i].toString() + " (Estimated value = $" + valueString + ")");
     }
-    
+
     // Parse input
     String input = "";
     do {
@@ -556,7 +556,7 @@ public class UserCmd {
         if (input.equals("")) {
           break;
         }
-        
+
         List<String> chosen = Arrays.asList(input.split("\\s*,\\s*"));
         for (String num : chosen) {
           int choice = Integer.parseInt(num);
@@ -564,16 +564,16 @@ public class UserCmd {
             amenities.add(values[choice - 1]);
           }
         }
-        
+
         break;
       } catch (NumberFormatException e) {
         input = "-1";
       }
     } while (input.compareTo("-1") == 0);
-    
+
     return amenities;
   }
-  
+
   private List<Date> datesBetween(Date startDate, Date endDate) {
     List<Date> dates = new ArrayList<Date>();
     Calendar calendar = new GregorianCalendar();
@@ -584,20 +584,20 @@ public class UserCmd {
       dates.add(result);
       calendar.add(Calendar.DATE, 1);
     }
-    
+
     return dates;
   }
 
   private ListingType getListingType() {
     ListingType type = null;
     ListingType types[] = ListingType.values();
-    
+
     // Print options
     System.out.println("=========SELECT TYPE=========");
     for (int i = 0; i < types.length; i++) {
       System.out.println((i + 1) + ". " + types[i].toString());
     }
-    
+
     // Parse input
     String input = "";
     int choice;
@@ -614,7 +614,7 @@ public class UserCmd {
         // Looping and asking for input again
       }
     }
-    
+
     return type;
   }
 
@@ -622,7 +622,7 @@ public class UserCmd {
     ListingController listingMngr = new ListingController();
     ResultSet rs = listingMngr.printUpcomingBookings(this.username);
     int i = 0;
-    
+
     try {
       System.out.println("======UPCOMING BOOKINGS======");
       for (i = 1; rs.next(); i++) {
@@ -634,7 +634,7 @@ public class UserCmd {
         String country = rs.getString("country");
         String postal = rs.getString("postal");
         String date = rs.getString("date");
-        
+
         System.out.println(i + ". " + type + " at "  + address + ", " + city + ", " + country + ", " + postal + " (" + lat + ", " + lon + ")");
         System.out.print(String.format("%" + ((int)(Math.log10(i)) + 3) + "s", ""));
         System.out.println("Booked for: " + date);
@@ -642,7 +642,7 @@ public class UserCmd {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    
+
     int cancelNum = -1;
     while (cancelNum < 0) {
       System.out.print("Enter 0 to go back or one of the previous options [1-" + (i - 1) + "] to cancel the booking: ");
@@ -658,14 +658,14 @@ public class UserCmd {
         // Loop again
       }
     }
-    
+
     try {
       rs.absolute(cancelNum);
       String cancelLat = rs.getString("lat");
       String cancelLon = rs.getString("lon");
       Date cancelDate = rs.getDate("date");
       BigDecimal cancelPrice = rs.getBigDecimal("price");
-      boolean canceled = listingMngr.cancelBooking(cancelLat, cancelLon, cancelDate, cancelPrice, true);
+      boolean canceled = listingMngr.cancelBookingRenter(cancelLat, cancelLon, cancelDate, cancelPrice);
       if (canceled) {
         System.out.println("Booking canceled!");
       }
